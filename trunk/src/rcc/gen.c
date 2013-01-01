@@ -457,7 +457,7 @@ emitasm (Node p, int nt)
           //
           // BMD check for two-operand destination overwrite
           //
-//      assert( !(p->x.kids[1]) || ( p->syms[RX] != p->x.kids[1]->syms[RX] ) );
+//          assert( !(p->x.kids[1]) || ( p->syms[RX] != p->x.kids[1]->syms[RX] ) );
 
           if ((p->x.kids[1]) && (p->syms[RX] == p->x.kids[1]->syms[RX]))
             {
