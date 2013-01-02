@@ -55,19 +55,8 @@
 #define FLTTMP 0x00f0
 #define FLTVAR 0x0f00
 
-#define ARG_NUM_REGS    4    
-
-
-//
-// old mips port stuff for arguments and return values
-//
-//#define INTRET 0x0001
-//#define FLTRET 0x0001
-//
-//
-//#define ARG_START_REG   1    // offset to first argument register
-//#define ARG_NUM_REGS    3    // number of argument registers
-//
+#define ARG_NUM_REGS     4    
+#define LAST_SAVED_REG  12    
 
 
 //
@@ -82,6 +71,7 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+#include <ctype.h>
 
 //
 // standard lcc boilerplate
@@ -123,7 +113,6 @@ static Symbol ireg[32], freg[32];
 static Symbol iregw, fregw;
 
 static int  cseg;
-static int  bigargs;
 
 //
 // YARD support functions
@@ -660,12 +649,16 @@ addr : reg              "(%0)"
 !
 ! TODO: catch stack offset > 60 and build with .imm sequence like aimm
 !
-! "-8" accounts for SIZE_PC_FP_SAVE ( offset from top of stack frame to end of locals )
+!
+addr : ADDRFP4          "%a+%F(sp)"        
+
+!
+! ADDRLP4 needs a "-8" to account for SIZE_PC_FP_SAVE ( offset from top of stack frame to end of locals )
 !
 ! note: ARM target avoided an offset by changing framesize just before the emitcode() call, 
-!       such that sp+framesize' pointed just above the locals within the stack frame
+!       such that sp+framesize' pointed just above the locals within the stack frame- not sure 
+!       how different offset for ADDRFP was handled
 !
-addr : ADDRFP4          "%a+%F-8(sp)"        
 addr : ADDRLP4          "%a+%F-8(sp)"        
      
 !
@@ -1211,7 +1204,7 @@ static void emit2(Node p)
       src = getregnum(p->x.kids[0]);
 
       if (n >= ARG_NUM_REGS) 
-        print(" st.q %s, %d(sp)\n  ; ARG+I|U|P",ireg[src]->x.name, n * 4);
+        print(" st.q %s, %d(sp)  ; ARG+I|U|P\n",ireg[src]->x.name, n * 4);
 
       break;
 
@@ -1265,32 +1258,44 @@ static void emit2(Node p)
     // emit2 is only called for EQ/NE by the following rules matching power-of-two constants
     // in order to compute the bit number for the skip from the power-of-two mask
     //
-    // TODO: add sanity check here for proper EQ/NE arguments
-    //
+    // 
+    // !
+    // ! skip-on-bit conditional patterns :  ( reg AND single_bit_mask ) == 0 
+    // ! integer to bit number conversion done with emit2
+    // !
+    // ! inspired by similar technique used in <pdp11.md> target 
+    // !
     // cp2  : CNSTI4         "%a"         cost_pow2(a)
     // cp2  : CNSTU4         "%a"         cost_pow2(a)
-    //
+    // 
     // stmt : EQI4(BANDI4(reg,cp2),ccz)   "# skip.bs %0,#bitnum(%1)\n bra %a\n"
     // stmt : EQU4(BANDU4(reg,cp2),ccz)   "# skip.bs %0,#bitnum(%1)\n bra %a\n"
-    //
+    // 
     // stmt : NEI4(BANDI4(reg,cp2),ccz)   "# skip.bc %0,#bitnum(%1)\n bra %a\n"
     // stmt : NEU4(BANDU4(reg,cp2),ccz)   "# skip.bc %0,#bitnum(%1)\n bra %a\n"
+    // 
     //
     case EQ+I: 
     case EQ+U:
+      // TODO: add sanity check here for proper EQ arguments
+
       src = getregnum( p->x.kids[0] );
       n   = p->kids[0]->kids[1]->syms[0]->u.c.v.u;
 
-      print(" skip.bs %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+      print(" skip.bs %s,#%d\n bra L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+//.L    print(" skip.bs %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
                                                                                      
       break;
 
     case NE+I: 
     case NE+U:
+      // TODO: add sanity check here for proper NE arguments
+
       src = getregnum( p->x.kids[0] );
       n   = p->kids[0]->kids[1]->syms[0]->u.c.v.u;
 
-      print(" skip.bc %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+      print(" skip.bc %s,#%d\n bra L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+//.L  print(" skip.bc %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
 
       break;
 
@@ -1346,12 +1351,13 @@ static void local(Symbol p)
 
 
 //
-// emit function
+// emit code for function
 //
 static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
 {
   int i, j;
-  int sizeisave, sizefsave, varargs;
+  int varargs;
+  int sizeisave, sizefsave;
   int dumpmask = 0;
   int reg      = 0;
 
@@ -1361,7 +1367,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   for (i = 0; callee[i]; i++)
   { ; }
 
-  varargs = variadic(f->type) || ( i > 0 ) && strcmp(callee[i-1]->name,"__builtin_va_alist") == 0;
+  varargs = variadic(f->type) || ( i > 0 ) && ( strcmp(callee[i-1]->name,"__builtin_va_alist") == 0 );
 
   //
   // initialize masks and stack offsets
@@ -1373,6 +1379,8 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
 
   //
   // loop through arguments
+  //   compute offsets
+  //   set dumpmask for args that need to be in memory
   //
   for (i = 0; callee[i]; i++) 
   {
@@ -1435,14 +1443,9 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   }
 
   //
-  // mask off non-arg registers
+  // remove non-argument registers from dumpmask
   //
   dumpmask &= 0xf;
-
-  //
-  //
-  //
-  bigargs = (varargs || reg > 4) ? 1 : 0;
 
   //
   // ??? check for arg list mismatch ???
@@ -1459,10 +1462,8 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   // compute stack space required
   //
   maxargoffset = roundup(maxargoffset, 4);
-
-  sizefsave = 8 * bitcount(usedmask[FREG] & 0xf0);
-
-  sizeisave = 4 * bitcount(usedmask[IREG] & INTVAR) + 4 * bitcount(dumpmask);
+  sizefsave    = 8 * bitcount(usedmask[FREG] & 0xf0);
+  sizeisave    = 4 * bitcount(usedmask[IREG] & INTVAR);
 
   //
   // total frame size, with room for FP + return address
@@ -1480,28 +1481,27 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   // 
   // $FFFF_FFFF
   // 
-  // 
   //           +  arg # N-1        +
   //           +  ...              +
   //           +  arg # 1          +
-  //           +  arg # 0          +    caller's frame  ( space reserved for arg 0..3 )
+  //           +  arg # 0          +    caller's frame  ( space always reserved for arg 0..3 )
   //
   //           ---------------------
   //
-  //           +  return address   +    ( allocated but not used in leaf functions )
+  //           +  return address   +    ( always allocated but not used in leaf functions )
   //
   //  fp ->    +  saved fp         +    ( space allocated, fp not currently used )
   //
-  //           +  locals           +
-  //           +  ...              +    maxoffset ???
-  //           +  locals           + 
+  //           +  locals           +  
+  //           +  ...              +    maxoffset
+  //           +  locals           +  
   //
   //           +  reg spill        +    sizeisave
-  //           +  ...              +        +
+  //           +  ...              +       +
   //           +  reg spill        +    sizefsave
   //
   //           +  outgoing args    +    
-  //           +  ...              +    maxargoffset ???
+  //           +  ...              +    maxargoffset
   //  sp ->    +  outgoing args    +    
   //
   //           ---------------------
@@ -1512,17 +1512,6 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   
   segment(CODE);
   
-  //
-  // ??? FIXME: figure out & replace old ARM code
-  //
-  if (glevel) 
-  {
-    print(" .align 4\n");
-    defstring(strlen(f->x.name) + 1, f->x.name);
-
-    print(" .align 4\n");
-    print(" dcd &%x\n", 0xff000000 | ((strlen(f->x.name) + 4) & ~3));
-  }
 
   print(" .align 2\n");
   print("\n%s:\n", f->x.name);
@@ -1547,32 +1536,45 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // FIXME: pop return address off hardware stack for non-leaf functions
   //
-  print(";;\n");
-  print(";; FIXME: when supported, pop return address off HW return stack for non-leaf routines\n");
-  print(";; st.q rs, %d(sp)\n", framesize-4 );
-  print(";;\n");
+  if (ncalls)
+  {
+    print(";;\n");
+    print(";; FIXME: when supported, pop return address off HW return stack for non-leaf routines\n");
+    print(";; st.q rs, %d(sp)\n", framesize-4 );
+    print(";;\n");
+    print("\n");
+  }
+
+
+  //
+  // dumpmask arg registers are copied to stack frame
+  //
+  print("; dumpmask arg copy \n");
+
+  for ( i = 0; i < ARG_NUM_REGS; i++)
+  {
+    if ( dumpmask & (1<<i) )
+    {
+      print(" st.q %s, %d(sp)\n", ireg[i]->x.name, framesize + 4 * i );
+    }
+  }
+
   print("\n");
 
 
   //
-  // save registers
+  // save caller-saved registers
   //
-  print("; save registers\n");
+  print("; caller-saved registers\n");
 
-
-  //
-  //  FIXME: offset calculation is wrong ???
-  //
-  for ( j = i = 0; i <= 12; i++)
+  for ( j = i = 0; i <= LAST_SAVED_REG; i++)
   {
-    if ( ( dumpmask | (usedmask[IREG] & INTVAR) ) & (1<<i) )
+    if ( (usedmask[IREG] & INTVAR) & (1<<i) )
     {
       print(" st.q %s, %d(sp)\n", ireg[i]->x.name, framesize - SIZE_PC_FP_SAVE - maxoffset - sizeisave + 4 * j );
       j++;
     }
   }
-
-  print("\n");
 
   //
   // TODO: replace old arm floating point save code
@@ -1581,19 +1583,21 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //                if (usedmask[FREG] & (1<<i))
   //                        print("\tstfe\t%s, [sp, #-12]!\n", freg[i]->x.name);
 
+  print("\n");
+
 
   //
-  // copy any register variables to args
+  // copy register args to register variables 
   //
-  print("; copy args\n");
+  print("; copy reg args\n");
 
   for (i = 0; ( i < ARG_NUM_REGS ) && callee[i]; i++)
   {
     if ( caller[i]->sclass == REGISTER &&
          callee[i]->sclass == REGISTER &&
-         caller[i]->type == callee[i]->type
+         caller[i]->type   == callee[i]->type
        )
-       print(" mov %s, %s ;;\n", callee[i]->x.name, caller[i]->x.name);
+       print(" mov %s, %s\n", callee[i]->x.name, caller[i]->x.name);
   }
 
   print("\n");
@@ -1607,9 +1611,9 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
 
   //
-  // Restore saved registers used by function
+  // Restore caller saved registers 
   //
-  print("; restore registers\n");
+  print("; restore caller-saved registers\n");
 
   //
   // TODO: replace old arm floating point restore code
@@ -1620,14 +1624,9 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //                                sizeisave - 4 * bitcount(dumpmask) +
   //                                (8 - i) * 12 - 4);
 
-
-  //
-  //  FIXME: offset calculation is wrong
-  //
-
-  for ( j = i = 0; i <= 12; i++)
+  for ( j = i = 0; i <= LAST_SAVED_REG; i++)
   {
-    if ( ( dumpmask | (usedmask[IREG] & INTVAR) ) & (1<<i) )
+    if ( (usedmask[IREG] & INTVAR) & (1<<i) )
     {
       print(" ld.q %s, %d(sp)\n", ireg[i]->x.name, framesize - SIZE_PC_FP_SAVE - maxoffset - sizeisave + 4 * j );
       j++;
@@ -1638,12 +1637,15 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
 
   //
-  // FIXME: use saved return address for non-leaf functions
+  // FIXME: restore saved return address for non-leaf functions
   //
-  print(";;\n");
-  print(";; FIXME: when supported, restore saved return address from software stack for non-leaf routines\n");
-  print(";; ld.q rs, %d(sp)\n", framesize-4 );
-  print(";;\n");
+  if (ncalls)
+  {
+    print(";;\n");
+    print(";; FIXME: when supported, restore saved return address from software stack for non-leaf routines\n");
+    print(";; ld.q rs, %d(sp)\n", framesize-4 );
+    print(";;\n");
+  }
 
   //
   // clean up stack frame
@@ -1729,20 +1731,34 @@ static void defaddress(Symbol p)
 static void defstring(int n, char *str) 
 {
   char *s;
+  int first = 1;
 
   print(" dc.b ");
 
-  for (s = str; s < str + n - 1 ; s++) 
+  //
+  // first loop prints comma-separated hex values for dc.b
+  //
+  for (s = str; s < str + n; s++) 
     {
-      print("$%x,", (*s) & 0xff );
+      if ( !first ) print(",");
+
+      print("$%x", (*s) & 0xff );
+      first = 0;
     }
 
-  ///
-  /// FIXME: disabled printing of original string as .asm comment (need to strip control chars first)
-  ///
-  ///    print("$%x  ; \"%s\"\n", (*s) & 0xff, str );
+  //
+  // second loop prints string again as a comment with control characters replaced by '~'
+  //
+  //
+  print("  ; \"");
 
-  print("$%x  ; \n", (*s) & 0xff);
+  for (s = str; s < str + n; s++) 
+    {
+      print("%c", isprint(*s) ? (*s) : '~' );
+    }
+
+  print("\"\n\n");
+
 }
 
 //
@@ -1770,10 +1786,12 @@ static void import(Symbol p)
 static void defsymbol(Symbol p) 
 {
   if (p->scope >= LOCAL && p->sclass == STATIC)
-    p->x.name = stringf( ".L%d", genlabel(1));
+    p->x.name = stringf( "L%d", genlabel(1));
+//    p->x.name = stringf( ".L%d", genlabel(1));
 
   else if (p->generated)
-    p->x.name = stringf( ".L%s", p->name);
+    p->x.name = stringf( "L%s", p->name);
+//    p->x.name = stringf( ".L%s", p->name);
 
   else
   {
@@ -2078,7 +2096,7 @@ Interface yardIR =
   1,          /* mulops_calls */
   0,          /* wants_callb */
   1,          /* wants_argb */
-  0,          /* left_to_right */
+  1,          /* left_to_right */
   0,          /* wants_dag */
   0,          /* unsigned_char */ 
 
