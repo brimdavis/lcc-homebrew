@@ -1823,13 +1823,13 @@ static void global(Symbol p)
   assert(p->u.seg);
 
   if (p->u.seg == BSS && p->sclass == STATIC)
-    print("\n%s:\n .common %d,%d\n .local %s\n ", p->x.name, p->type->size, p->type->align, p->x.name);
+    print("\n%s: .common %d,%d\n .local %s\n ", p->x.name, p->type->size, p->type->align, p->x.name);
 
   else if (p->u.seg == BSS && Aflag >= 2)
     print("\n .align %d\n%s:\n .reserve %d\n", p->type->align, p->x.name, p->type->size);
 
   else if (p->u.seg == BSS)
-    print("\n%s:\n .common %d,%d\n", p->x.name, p->type->size, p->type->align);
+    print("\n%s: .common %d,%d\n", p->x.name, p->type->size, p->type->align);
 
   else
     print(" .align %d\n\n%s:\n", p->type->align, p->x.name);
