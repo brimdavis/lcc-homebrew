@@ -3,42 +3,57 @@
 #   - for use with nmake
 #   - tested on XP Pro 32 bit with Visual C++ 2005 ( aka VS8 )
 #
-# - currently works to build lcc cross-compilers emitting asembly sources
+# - currently works to build lcc cross-compilers emitting assembly sources
 # - native x86 applications fail due to library/include issues processing VS8 headers
 #
 #
 # Example usage:
 #   nmake -f makefile.xp all
+#   nmake -f makefile.xp test
 #
 
-HOSTFILE=src/etc/win32.c
+#
+# platform specific setup
+#
+HOSTFILE=src\etc\win32.c
+
+TEMPDIR=C:\temp
 
 #
-# TARGETNAME is used for for testing
+# use a distinct name for the build directory in the makefile to allow for easy chages to build process
+#
+LCCBUILDDIR=$(LCCDIR)
+
+#
+# TARGETNAME selects processor target to be used for 'make test'
 #
 #TARGETNAME=x86\win32
-#TARGETNAME=mips\irix
+TARGETNAME=mips\irix
 #TARGETNAME=sparc\solaris
-TARGETNAME=alpha\osf
+#TARGETNAME=alpha\osf
 #TARGETNAME=yard\y1a
 
 TARGET=targets\$(TARGETNAME)
 
 #
+# TSTDIR is where the tests are built
 #
-#
-TEMPDIR=\\temp
-TSTDIR=$(LCCBUILDDIR)\$(TARGET)\tst
+TSTDIR=$(LCCBUILDDIR)\..\$(TARGET)\tst
+
 
 #
+# TODO: add some checks that target & build directories exist
 #
+
+#
+# shorthand
 #
 A=.lib
 O=.obj
 E=.exe
 
 #
-#
+# VS8 compiler/linker command lines
 #
 CC=cl -nologo
 CFLAGS=-DWIN32 -Zi -MTd -Fd$(LCCBUILDDIR)^\
@@ -113,7 +128,7 @@ $Brcc$E::	$Bmain$O $Blibrcc$A $(EXTRAOBJS)
 $Blibrcc$A:	$(RCCOBJS)
 		lib -out:$@ $(RCCOBJS)
 
-$(RCCOBJS):	src/rcc/c.h src/rcc/ops.h src/rcc/token.h src/rcc/config.h
+$(RCCOBJS):	src/rcc/c.h src/rcc/ops.h src/rcc/token.h src/rcc/config.h src/rcc/patch.h
 
 $Balloc$O:	src/rcc/alloc.c;	$(CC) $(CFLAGS) -c -Isrc/rcc -Fo$@ src/rcc/alloc.c
 $Bbind$O:	src/rcc/bind.c;	$(CC) $(CFLAGS) -c -Isrc/rcc -Fo$@ src/rcc/bind.c
@@ -448,7 +463,7 @@ RCCSRCS=src/rcc/alloc.c \
 	src/rcc/types.c \
 	src/rcc/null.c \
 	targets/symbolic/src/symbolic.c \
-	src/rcc/bytecode.c \
+	targets/bytecode/src/bytecode.c \
 	src/rcc/gen.c \
 	src/rcc/stab.c \
 	$Bdagcheck.c \

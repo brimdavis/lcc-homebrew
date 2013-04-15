@@ -906,10 +906,14 @@ static void detect_endian_swap( void )
 //
 static void write_header( void )
 {
-  print(";\n");
-  print("; incomplete and experimental YARD backend for lcc\n");
-  print(";\n");
-  print("\n");
+  print
+  (
+    ";\n"
+    "; incomplete and experimental YARD backend for lcc\n"
+    ";\n"
+    "\n"
+  );
+
 }
 
 //
@@ -917,20 +921,23 @@ static void write_header( void )
 //
 static void write_cstart( void )
 {
-  print(";\n");
-  print("; simple absolute cstart code for tiny embedded startup\n");
-  print(";\n");
-  print(" org $100\n");
-  print("cstart_1:\n");
-  print(" mov sp,#$1000\n");
-  print(" bsr main\n");
-  print("\n");
-  print(";; rts\n");
-  print("\n");
-  print("; jump to reset vector \n");
-  print(" mov r0,#0\n");
-  print(" jmp (r0)\n");
-  print("\n");
+  print
+  (
+    ";\n"
+    "; simple absolute cstart code for tiny embedded startup\n"
+    ";\n"
+    " org $100\n"
+    "cstart_1:\n"
+    " mov sp,#$1000\n"
+    " bsr main\n"
+    "\n"
+    ";; rts\n"
+    "\n"
+    "; jump to reset vector \n"
+    " mov r0,#0\n"
+    " jmp (r0)\n"
+    "\n"
+  );
 }
 
 

@@ -1,5 +1,45 @@
-See repository history for lcc-homebrew changes.
 
+See SVN repository history for current lcc-homebrew change log.
+
+lcc-homebrew: 
+
+ - started with fork of Github lcc 4.2 code
+
+ - initial edit change logs were lost in a self-inflicted directory rename snafu, 
+   ( attempted SVN directory renames in trunk using an SVN client with GitHub )
+
+ - started overhaul of build infrastructure
+     - makefile.xp created from makefile.nt, changed to work with newer versions of Visual Studio
+     - moved old makefiles to original_build_infrastructure for the time being
+
+ - directory re-org: program sources under src, moved target related code into targets tree
+
+      doc
+
+      src
+        cpp
+        etc
+        lburg
+        lib
+        rcc
+
+      targets
+        alpha
+        arm
+        bytecode
+        dagcheck
+        mips
+        sparc
+        symbolic
+        x86
+        yard
+
+      tst
+
+
+----------------------------------------
+original LOG file from lcc4.2 below
+----------------------------------------
 
 From lcc 4.1 to 4.2:
 
