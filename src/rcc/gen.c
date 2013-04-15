@@ -454,16 +454,20 @@ emitasm (Node p, int nt)
       if (*fmt == '?')
         {
 
+#ifdef PATCH_2OP_EMIT_ASSERT
+
           //
           // BMD check for two-operand destination overwrite
           //
-//          assert( !(p->x.kids[1]) || ( p->syms[RX] != p->x.kids[1]->syms[RX] ) );
+          assert( !(p->x.kids[1]) || ( p->syms[RX] != p->x.kids[1]->syms[RX] ) );
+
+#endif
 
           if ((p->x.kids[1]) && (p->syms[RX] == p->x.kids[1]->syms[RX]))
             {
               printf
-                ("DANGER WILL ROBINSON: two operand destination overwrite- %x, %x\n",
-                 p->syms[RX], p->x.kids[1]->syms[RX]);
+                (" .error \"DANGER WILL ROBINSON: two operand destination overwrite- %s, %s\"\n",
+                 p->syms[RX]->x.name, p->x.kids[1]->syms[RX]->x.name);
             }
 
           fmt++;
@@ -623,27 +627,42 @@ rtarget (Node p, int n, Symbol r)
   assert (q);
   assert (r);
   assert (r->sclass == REGISTER || !r->x.wildcard);
+
+
+#ifndef PATCH_2OP_RTARGET_SLEDGEHAMMER
+#ifndef PATCH_2OP_RTARGET_ADDLOAD
+
   assert (q->syms[RX]);
 
-
-// BMD debug, print operands
-//printf("rtarget: %x  %s\n", q->syms[RX],  r->x.name );
-
-//
-// BMD original code
-//
+  //
+  // original code
+  //
   if (r != q->syms[RX] && !q->syms[RX]->x.wildcard)
 
-// BMD always allocating temp patches two-operand bug at the cost of temp loads everywhere
-//
-//        if ( 1 ) 
+#endif
+#endif
 
-//
-// BMD non-working attempt to catch only bad code generation case
-//        if (   
-//               (  r != q->syms[RX]  &&  !q->syms[RX]->x.wildcard  )
-//            || (  r->sclass == REGISTER  )
-//           )
+
+#ifdef PATCH_2OP_RTARGET_SLEDGEHAMMER
+
+  assert (q->syms[RX]);
+
+  //
+  // BMD always allocating temp patches two-operand bug at the cost of temp loads everywhere
+  //
+  if ( 1 ) 
+
+#endif
+
+
+#ifdef PATCH_2OP_RTARGET_ADDLOAD
+
+  //
+  // two-operand patch from JW's comp.compilers.lcc post of April 4 2013
+  //
+  if (r != q->syms[RX] && (!q->syms[RX] || !q->syms[RX]->x.wildcard))
+
+#endif
 
     {
 
@@ -662,6 +681,45 @@ rtarget (Node p, int n, Symbol r)
           r->x.name));
 }
 
+//
+// two-operand patch from JW's comp.compilers.lcc post of April 4 2013
+// with changes for lcc4.2 rmap syntax
+//
+static void addload(Node p) 
+{
+   Node q;
+   int i, rulenum;
+
+   for (i = 0; i < NELEMS(p->kids); i++) {
+     q = p->kids[i];
+
+     if (q) {
+
+       if (p->x.inst && q->x.inst) {
+         rulenum = getrule(q, q->x.inst);
+
+         if (IR->x._templates[rulenum][0] == '?') {
+           Symbol s = q->syms[RX];
+           assert(s);
+
+           if (s->x.regnode && s->x.regnode->vbl) {
+               q->syms[RX] = NULL;
+               rtarget(p, i, s);
+
+          //   setreg(q, rmap[optype(q->op)]);
+               setreg(q, (*IR->x.rmap)(optype (q->op)) );
+
+               (*IR->x._label)(p);
+               reduce(p, p->x.inst);
+           }
+         }
+       }
+       addload(q);
+     }
+   }
+} 
+
+
 static void
 rewrite (Node p)
 {
@@ -674,6 +732,16 @@ rewrite (Node p)
 
   debug (dumpcover (p, 1, 0));
   reduce (p, 1);
+
+#ifdef PATCH_2OP_RTARGET_ADDLOAD
+
+  //
+  // two-operand patch from JW's comp.compilers.lcc post of April 4 2013
+  //
+  addload(p);
+
+#endif
+
 }
 
 Node

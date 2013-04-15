@@ -6,6 +6,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include "patch.h"
+
 #define NEW(p,a) ((p) = allocate(sizeof *(p), (a)))
 #define NEW0(p,a) memset(NEW((p),(a)), 0, sizeof *(p))
 #define isaddrop(op) (specific(op)==ADDRG+P || specific(op)==ADDRL+P \
