@@ -434,6 +434,8 @@ emitasm (Node p, int nt)
   char *fmt;
   Node kids[10];
 
+  int  swap_flag = 0;  // patch, swap %0 and %1 to prevent two-operand register overwrite
+
   p = reuse (p, nt);
   rulenum = getrule (p, nt);
   nts = IR->x._nts[rulenum];
@@ -451,7 +453,7 @@ emitasm (Node p, int nt)
       //
       // BMD part of "?" rule code, omits first instruction if operands match
       //
-      if (*fmt == '?')
+      if ( (*fmt == '?') || (*fmt == '@') )
         {
 
 #ifdef PATCH_2OP_EMIT_ASSERT
@@ -465,20 +467,61 @@ emitasm (Node p, int nt)
 
           if ((p->x.kids[1]) && (p->syms[RX] == p->x.kids[1]->syms[RX]))
             {
-              printf
-                (" .error \"DANGER WILL ROBINSON: two operand destination overwrite- %s, %s\"\n",
-                 p->syms[RX]->x.name, p->x.kids[1]->syms[RX]->x.name);
+
+#ifdef PATCH_2OP_EMIT_SWAPREG
+
+              if (*fmt == '@')
+                {
+                  swap_flag = 1;
+
+//                  print
+//                    (" .warn \"attempting operand swap to avoid two operand destination overwrite- %s, %s\"\n",
+//                     p->x.kids[0]->syms[RX]->x.name, p->x.kids[1]->syms[RX]->x.name);
+
+                  print(";; operand swap:  %s = %s OP %s\n", p->syms[RX]->x.name, p->x.kids[0]->syms[RX]->x.name, p->x.kids[1]->syms[RX]->x.name);
+
+                }
+
+              else
+
+#endif
+                {
+                  printf
+                    (" .error \"DANGER WILL ROBINSON: two operand destination overwrite- %s, %s\"\n",
+                     p->syms[RX]->x.name, p->x.kids[1]->syms[RX]->x.name);
+                }
             }
 
-          fmt++;
-          assert (p->kids[0]);
+// can't increment yet for patched code, moved below
+//          fmt++;
+//          assert (p->kids[0]);
 
-          if (p->syms[RX] == p->x.kids[0]->syms[RX])
+
+
+          //
+          // omit first instruction of template if redundant
+          //
+          if  (
+                   ( (p->x.kids[0]) && (p->syms[RX] == p->x.kids[0]->syms[RX]) && ( (*fmt == '?') || (*fmt == '@') ) ) 
+
+#ifdef PATCH_2OP_EMIT_SWAPREG
+
+                || ( (p->x.kids[1]) && (p->syms[RX] == p->x.kids[1]->syms[RX]) && (*fmt == '@') )
+#endif
+
+              )
+
             {
-              while (*fmt++ != '\n')
+              while (*fmt++ != '\n')       // skip everything up to first \n
                 ;
             }
-        }
+
+          else
+            {
+              fmt++;   // skip over single '?' or '*' 
+            }
+  
+      }
 
       for ((*IR->x._kids) (p, rulenum, kids); *fmt; fmt++)
         if (*fmt != '%')
@@ -487,8 +530,19 @@ emitasm (Node p, int nt)
         else if (*++fmt == 'F')
           print ("%d", framesize);
 
+#ifndef PATCH_2OP_EMIT_SWAPREG
+
         else if (*fmt >= '0' && *fmt <= '9')
           emitasm (kids[*fmt - '0'], nts[*fmt - '0']);
+#else
+
+        else if (*fmt >= '0' && *fmt <= '1')
+          emitasm (kids[(*fmt - '0') ^ swap_flag], nts[(*fmt - '0') ^ swap_flag]);
+
+        else if (*fmt >= '2' && *fmt <= '9')
+          emitasm (kids[*fmt - '0'], nts[*fmt - '0']);
+
+#endif
 
         else if (*fmt >= 'a' && *fmt < 'a' + NELEMS (p->syms))
           fputs (p->syms[*fmt - 'a']->x.name, stdout);
@@ -983,7 +1037,7 @@ ralloc (Node p)
           //BMD printf(" ralloc : testing for ? from node %x)\n", (char *) p);
 
 
-          if (*IR->x._templates[getrule (p, p->x.inst)] == '?')
+          if ( (*IR->x._templates[getrule (p, p->x.inst)] == '?') || (*IR->x._templates[getrule (p, p->x.inst)] == '@') )
 
             for (i = 1; i < NELEMS (p->x.kids) && p->x.kids[i]; i++)
               {

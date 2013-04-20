@@ -363,32 +363,35 @@ reg  :  c32     " imm #%0\n mov %c,imm   ; reg:c32\n"     4
 !
 ! logical ops
 !
-rcg5 : cg5               " #%0"
-rcg5 : reg               "%0"     
+reg  : BANDI4(reg,reg)   "@ mov %c,%0\n and %c,%1 \n"                1
+reg  : BANDI4(reg,cg5)   "@ mov %c,%0\n and %c,#%1 \n"               1
+reg  : BANDI4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
+reg  : BANDI4(reg,c32)   "@ mov %c,%0\n imm #%1   \n and %c,imm\n"   3
 
-reg  : BANDI4(reg,rcg5)  "? mov %c,%0\n and %c,%1 \n"                1
-reg  : BANDI4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
-reg  : BANDI4(reg,c32)   "? mov %c,%0\n imm #%1   \n and %c,imm\n"   3
+reg  : BANDU4(reg,reg)   "@ mov %c,%0\n and %c,%1\n"                 1
+reg  : BANDU4(reg,cg5)   "@ mov %c,%0\n and %c,#%1\n"                1
+reg  : BANDU4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
+reg  : BANDU4(reg,c32)   "@ mov %c,%0\n imm #%1   \n and %c,imm\n"   3
 
-reg  : BANDU4(reg,rcg5)  "? mov %c,%0\n and %c,%1\n"                 1
-reg  : BANDU4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
-reg  : BANDU4(reg,c32)   "? mov %c,%0\n imm #%1   \n and %c,imm\n"   3
+reg  : BORI4(reg,reg)    "@ mov %c,%0\n or %c,%1  \n"                1
+reg  : BORI4(reg,cg5)    "@ mov %c,%0\n or %c,#%1  \n"               1
+reg  : BORI4(reg,c12)    "@ mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
+reg  : BORI4(reg,c32)    "@ mov %c,%0\n imm #%1   \n or %c,imm\n"    3
 
-reg  : BORI4(reg,rcg5)   "? mov %c,%0\n or %c,%1  \n"                1
-reg  : BORI4(reg,c12)    "? mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
-reg  : BORI4(reg,c32)    "? mov %c,%0\n imm #%1   \n or %c,imm\n"    3
+reg  : BORU4(reg,reg)    "@ mov %c,%0\n or %c,%1\n"                  1
+reg  : BORU4(reg,cg5)    "@ mov %c,%0\n or %c,#%1\n"                 1
+reg  : BORU4(reg,c12)    "@ mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
+reg  : BORU4(reg,c32)    "@ mov %c,%0\n imm #%1   \n or %c,imm\n"    3
 
-reg  : BORU4(reg,rcg5)   "? mov %c,%0\n or %c,%1\n"                  1
-reg  : BORU4(reg,c12)    "? mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
-reg  : BORU4(reg,c32)    "? mov %c,%0\n imm #%1   \n or %c,imm\n"    3
+reg  : BXORI4(reg,reg)   "@ mov %c,%0\n xor %c,%1 \n"                1
+reg  : BXORI4(reg,cg5)   "@ mov %c,%0\n xor %c,#%1 \n"               1
+reg  : BXORI4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
+reg  : BXORI4(reg,c32)   "@ mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
 
-reg  : BXORI4(reg,rcg5)  "? mov %c,%0\n xor %c,%1 \n"                1
-reg  : BXORI4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
-reg  : BXORI4(reg,c32)   "? mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
-
-reg  : BXORU4(reg,rcg5)  "? mov %c,%0\n xor %c,%1\n"                 1
-reg  : BXORU4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
-reg  : BXORU4(reg,c32)   "? mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
+reg  : BXORU4(reg,reg)   "@ mov %c,%0\n xor %c,%1\n"                 1
+reg  : BXORU4(reg,cg5)   "@ mov %c,%0\n xor %c,#%1\n"                1
+reg  : BXORU4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
+reg  : BXORU4(reg,c32)   "@ mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
 
 ! 
 ! note, no "? mov" prefix is needed for complement, because move.not has independent source/dest
@@ -400,23 +403,35 @@ reg  : BCOMU4(reg)       " mov.not %c,%0\n"   1
 !
 ! logicals again, this time around with rules to emit .not variants for ~register_operand
 !
-reg  : BANDI4(reg,BCOMI4(rcg5))  "? mov %c,%0\n and.not %c,%1 \n"    0
-reg  : BANDI4(reg,BCOMU4(rcg5))  "? mov %c,%0\n and.not %c,%1 \n"    0
+reg  : BANDI4(reg,BCOMI4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDI4(reg,BCOMI4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
+reg  : BANDI4(reg,BCOMU4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDI4(reg,BCOMU4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
 
-reg  : BANDU4(reg,BCOMI4(rcg5))  "? mov %c,%0\n and.not %c,%1\n"     0
-reg  : BANDU4(reg,BCOMU4(rcg5))  "? mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDU4(reg,BCOMI4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDU4(reg,BCOMI4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
+reg  : BANDU4(reg,BCOMU4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDU4(reg,BCOMU4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
 
-reg  : BORI4(reg,BCOMI4(rcg5))   "? mov %c,%0\n or.not %c,%1  \n"    0
-reg  : BORI4(reg,BCOMU4(rcg5))   "? mov %c,%0\n or.not %c,%1  \n"    0
+reg  : BORI4(reg,BCOMI4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORI4(reg,BCOMI4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
+reg  : BORI4(reg,BCOMU4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORI4(reg,BCOMU4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
 
-reg  : BORU4(reg,BCOMI4(rcg5))   "? mov %c,%0\n or.not %c,%1\n"      0
-reg  : BORU4(reg,BCOMU4(rcg5))   "? mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORU4(reg,BCOMI4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORU4(reg,BCOMI4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
+reg  : BORU4(reg,BCOMU4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORU4(reg,BCOMU4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
 
-reg  : BXORI4(reg,BCOMI4(rcg5))  "? mov %c,%0\n xor.not %c,%1 \n"    0
-reg  : BXORI4(reg,BCOMU4(rcg5))  "? mov %c,%0\n xor.not %c,%1 \n"    0
+reg  : BXORI4(reg,BCOMI4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORI4(reg,BCOMI4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
+reg  : BXORI4(reg,BCOMU4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORI4(reg,BCOMU4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
 
-reg  : BXORU4(reg,BCOMI4(rcg5))  "? mov %c,%0\n xor.not %c,%1\n"     0
-reg  : BXORU4(reg,BCOMU4(rcg5))  "? mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORU4(reg,BCOMI4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORU4(reg,BCOMI4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
+reg  : BXORU4(reg,BCOMU4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORU4(reg,BCOMU4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
 
 
 
@@ -480,60 +495,70 @@ reg  : RSHU4(reg,sc2)    "? mov %c,%0\n lsr %c,#1\n lsr %c,#1\n"  2
 !
 
 ! unsupported constant shifts
-reg  : LSHI4(reg,sc5)    "#"  4
-reg  : LSHU4(reg,sc5)    "#"  4
-reg  : RSHI4(reg,sc5)    "#"  4
-reg  : RSHU4(reg,sc5)    "#"  4
+reg  : LSHI4(reg,sc5)    "#\n"  4
+reg  : LSHU4(reg,sc5)    "#\n"  4
+reg  : RSHI4(reg,sc5)    "#\n"  4
+reg  : RSHU4(reg,sc5)    "#\n"  4
                         
 ! unsupported variable shifts
-reg  : LSHI4(reg,reg)    "#"  4
-reg  : LSHU4(reg,reg)    "#"  4
-reg  : RSHI4(reg,reg)    "#"  4
-reg  : RSHU4(reg,reg)    "#"  4
+reg  : LSHI4(reg,reg)    "#\n"  4
+reg  : LSHU4(reg,reg)    "#\n"  4
+reg  : RSHI4(reg,reg)    "#\n"  4
+reg  : RSHU4(reg,reg)    "#\n"  4
                         
                         
 !
 ! arithmetic ops
 !
-rca5 : ca5    " #%0"
-rca5 : reg    "%0"
-   
-reg  : ADDI4(reg,rca5)   "? mov %c,%0\n add %c,%1\n"                 1
-reg  : ADDI4(reg,c12)    "? mov %c,%0\n imm12 #%1\n add %c,imm\n"    2
-reg  : ADDI4(reg,c32)    "? mov %c,%0\n imm #%1  \n add %c,imm\n"    3
+reg  : ADDI4(reg,reg)    "@ mov %c,%0\n add %c,%1\n"                 1
+reg  : ADDI4(reg,ca5)    "@ mov %c,%0\n add %c,#%1\n"                1
+reg  : ADDI4(reg,c12)    "@ mov %c,%0\n imm12 #%1\n add %c,imm\n"    2
+reg  : ADDI4(reg,c32)    "@ mov %c,%0\n imm #%1  \n add %c,imm\n"    3
 
-reg  : ADDP4(reg,rca5)   "? mov %c,%0\n add %c,%1\n"                 1
-reg  : ADDP4(reg,c12)    "? mov %c,%0\n imm12 #%1\n add %c,imm\n"    2
-reg  : ADDP4(reg,c32)    "? mov %c,%0\n imm #%1  \n add %c,imm\n"    3
+reg  : ADDP4(reg,reg)    "@ mov %c,%0\n add %c,%1\n"                 1
+reg  : ADDP4(reg,ca5)    "@ mov %c,%0\n add %c,#%1\n"                1
+reg  : ADDP4(reg,c12)    "@ mov %c,%0\n imm12 #%1\n add %c,imm\n"    2
+reg  : ADDP4(reg,c32)    "@ mov %c,%0\n imm #%1  \n add %c,imm\n"    3
 
-reg  : ADDU4(reg,rca5)   "? mov %c,%0\n add %c,%1\n"                 1
-reg  : ADDU4(reg,c12)    "? mov %c,%0\n imm12 #%1\n add %c,imm\n"    2
-reg  : ADDU4(reg,c32)    "? mov %c,%0\n imm #%1  \n add %c,imm\n"    3
-     
-reg  : SUBI4(reg,rca5)   "? mov %c,%0\n sub %c,%1\n"                 1
+reg  : ADDU4(reg,reg)    "@ mov %c,%0\n add %c,%1\n"                 1
+reg  : ADDU4(reg,ca5)    "@ mov %c,%0\n add %c,#%1\n"                1
+reg  : ADDU4(reg,c12)    "@ mov %c,%0\n imm12 #%1\n add %c,imm\n"    2
+reg  : ADDU4(reg,c32)    "@ mov %c,%0\n imm #%1  \n add %c,imm\n"    3
+
+!     
+! SUB is non-commutative; reg,reg fixups have to be handled in emit2()
+!     
+reg  : SUBI4(reg,reg)    "#\n"                                       1
+reg  : SUBP4(reg,reg)    "#\n"                                       1
+reg  : SUBU4(reg,reg)    "#\n"                                       1
+
+!     
+! can reg-constant operations still use patterns ???
+!     
+reg  : SUBI4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
 reg  : SUBI4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
 reg  : SUBI4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
-reg  : SUBP4(reg,rca5)   "? mov %c,%0\n sub %c,%1\n"                 1
+reg  : SUBP4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
 reg  : SUBP4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
 reg  : SUBP4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
-reg  : SUBU4(reg,rca5)   "? mov %c,%0\n sub %c,%1\n"                 1
+reg  : SUBU4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
 reg  : SUBU4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
 reg  : SUBU4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
 !     
 ! FIXME: double check "? mov" sense for rsub with register source
 !     
-reg  : SUBI4(rca5,reg)   "? mov %c,%1\n rsub %c,%0\n"                1
+reg  : SUBI4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
 reg  : SUBI4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
 reg  : SUBI4(c32,reg)    "? mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
 
-reg  : SUBP4(rca5,reg)   "? mov %c,%1\n rsub %c,%0\n"                1
+reg  : SUBP4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
 reg  : SUBP4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
 reg  : SUBP4(c32,reg)    "? mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
 
-reg  : SUBU4(rca5,reg)   "? mov %c,%1\n rsub %c,%0\n"                1
+reg  : SUBU4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
 reg  : SUBU4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
 reg  : SUBU4(c32,reg)    "? mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
 
@@ -622,6 +647,8 @@ stmt : LABELV           "\n%a:\n"
 !
 ! address constants      
 !
+!  FIXME: acon c32 rule seems to act strange, maybe redefine here without refencing c32
+!
 acon  : c32              "%0"      
 acon  : ADDRGP4          "%a"      
 
@@ -637,7 +664,7 @@ addr : ADDP4(reg,aimm)  " .imm(%0)"     1
 !
 ! load address constant into register
 !
-reg  : acon             " imm #%0   ; reg:acon\n mov %c,imm\n"  2
+reg  : acon             " imm #%0   ; reg:acon\n mov %c,imm\n"  3
 
 !
 ! plain register indirect
@@ -1014,11 +1041,11 @@ static void progbeg(int argc, char *argv[])
 //
 //
 static void progend(void) 
-  {
-    print("\n");
-    print(" .align 2\n");
-    print(" end\n");
-  }
+{
+  print("\n");
+  print(" .align 2\n");
+  print(" end\n");
+}
 
 //
 //
@@ -1199,7 +1226,7 @@ static void clobber(Node p)
 //
 static void emit2(Node p) 
 {
-  int src, dst, n;
+  int src, src0, src1, dst, n;
   int size, offset;
 
   switch (specific(p->op)) 
@@ -1256,10 +1283,44 @@ static void emit2(Node p)
       break;
 
 
+    //
+    // unsupported shifts
+    //
     case LSH+I: case LSH+U: case RSH+I: case RSH+U:
       print( "\n .error \"Multi-bit (>2) and variable shifts not supported yet\"\n" );
 
       break;
+
+    //
+    // non-commutative reg-reg subtracts are fixed up here if there's a two-operand overwrite
+    //
+    case SUB+I: case SUB+U: 
+      dst  = getregnum( p );
+      src0 = getregnum( p->x.kids[0] );
+      src1 = getregnum( p->x.kids[1] );
+
+      print( ";; emit2 SUB: %s = %s - %s\n", ireg[dst]->x.name, ireg[src0]->x.name, ireg[src1]->x.name );
+
+      //
+      // fixup any operand overwrites by either swapping operands or switching to rsub
+      //
+      if ( dst == src0 )
+      {
+        print(" sub %s,%s\n",  ireg[dst]->x.name, ireg[src1]->x.name );
+      }
+
+      else if ( dst == src1 )
+      {
+        print(" rsub %s,%s\n", ireg[dst]->x.name, ireg[src0]->x.name );
+      }
+
+      else 
+      {
+        print(" mov %s,%s\n sub %s,%s\n", ireg[dst]->x.name, ireg[src0]->x.name, ireg[dst]->x.name, ireg[src1]->x.name );
+      }
+
+      break;
+
 
     //
     // emit2 is only called for EQ/NE by the following rules matching power-of-two constants
@@ -1483,7 +1544,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print(";\n");
 
   // 
-  // Stack frame: intended layout, generated code doesn't match yet...
+  // Stack frame: intended layout, generated code doesn't quite match yet...
   // 
   // 
   // $FFFF_FFFF

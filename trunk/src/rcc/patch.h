@@ -13,7 +13,7 @@
 // work around two-operand overwrite bug with new addload() routine called by rtarget
 // using two-operand patch from JW's comp.compilers.lcc post of April 4 2013
 //
-#define PATCH_2OP_RTARGET_ADDLOAD
+#undef PATCH_2OP_RTARGET_ADDLOAD
 
 //
 // original sledgehammer workaround for two operand overwrite bug, force rtarget to always reload
@@ -24,7 +24,7 @@
 //
 // work around two operand overwrite by swapping registers in emit()
 //
-#undef PATCH_2OP_EMIT_SWAPREG
+#define PATCH_2OP_EMIT_SWAPREG
 
 
 //
