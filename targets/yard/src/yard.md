@@ -18,7 +18,7 @@
 //
 //---------------------------------------------------------------
 //
-// <yard.md> copyright (c) 2012, Brian Davis
+// <yard.md> copyright (c) 2012,2013 Brian Davis
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -351,6 +351,11 @@ c32  :  CNSTI4  "%a"  1
 c32  :  CNSTU4  "%a"  1
 c32  :  CNSTP4  "%a"  1
 
+!
+! include address constants in c32
+!
+c32  :  ADDRGP4   "%a"  1
+
 
 !
 ! constant register loads 
@@ -533,7 +538,7 @@ reg  : SUBP4(reg,reg)    "#\n"                                       1
 reg  : SUBU4(reg,reg)    "#\n"                                       1
 
 !     
-! can reg-constant operations still use patterns ???
+! FIXME: should reg-constant operations still use patterns ???
 !     
 reg  : SUBI4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
 reg  : SUBI4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
@@ -549,6 +554,7 @@ reg  : SUBU4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
 !     
 ! FIXME: double check "? mov" sense for rsub with register source
+!        should there even be a '?' when the constant comes first
 !     
 reg  : SUBI4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
 reg  : SUBI4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
@@ -611,14 +617,14 @@ reg  : DIVF8(reg,reg)    " fp.div.d %c, %0, %1\n"  1
 !
 ! register-register sign/zero extensions, needed for char/short register variables
 !
-reg  : CVII4(reg)        " ext.sb %c,%0\n"  ( a->syms[0]->u.c.v.i == 1 ? 1 : LBURG_MAX )
-reg  : CVII4(reg)        " ext.sw %c,%0\n"  ( a->syms[0]->u.c.v.i == 2 ? 1 : LBURG_MAX )
+reg  : CVII4(reg)        " ext.sb %c,%0\n"  ( a->syms[0]->u.c.v.i == 1 ? 1:LBURG_MAX )
+reg  : CVII4(reg)        " ext.sw %c,%0\n"  ( a->syms[0]->u.c.v.i == 2 ? 1:LBURG_MAX )
 
-reg  : CVUI4(reg)        " ext.ub %c,%0\n"  ( a->syms[0]->u.c.v.i == 1 ? 1 : LBURG_MAX )
-reg  : CVUI4(reg)        " ext.uw %c,%0\n"  ( a->syms[0]->u.c.v.i == 2 ? 1 : LBURG_MAX )
+reg  : CVUI4(reg)        " ext.ub %c,%0\n"  ( a->syms[0]->u.c.v.i == 1 ? 1:LBURG_MAX )
+reg  : CVUI4(reg)        " ext.uw %c,%0\n"  ( a->syms[0]->u.c.v.i == 2 ? 1:LBURG_MAX )
                                               
-reg  : CVUU4(reg)        " ext.ub %c,%0\n"  ( a->syms[0]->u.c.v.i == 1 ? 1 : LBURG_MAX )
-reg  : CVUU4(reg)        " ext.uw %c,%0\n"  ( a->syms[0]->u.c.v.i == 2 ? 1 : LBURG_MAX )
+reg  : CVUU4(reg)        " ext.ub %c,%0\n"  ( a->syms[0]->u.c.v.i == 1 ? 1:LBURG_MAX )
+reg  : CVUU4(reg)        " ext.uw %c,%0\n"  ( a->syms[0]->u.c.v.i == 2 ? 1:LBURG_MAX )
 
 
 !
@@ -630,8 +636,8 @@ reg  : CVFF8(reg)        " fp.cvt.d.s f%c,f%0\n"                   1
 reg  : CVIF4(reg)        " fp.mtc %0,f%c\n fp.cvt.s.w f%c,f%c\n"     2
 reg  : CVIF8(reg)        " fp.mtc %0,f%c\n fp.cvt.d.w f%c,f%c\n"     2
 
-reg  : CVFI4(reg)        " fp.trunc.s f2,f%0,%c\n fp.mfc %c,f2\n"  (a->syms[0]->u.c.v.i==4?2:LBURG_MAX)
-reg  : CVFI4(reg)        " fp.trunc.d f2,f%0,%c\n fp.mfc %c,f2\n"  (a->syms[0]->u.c.v.i==8?2:LBURG_MAX)
+reg  : CVFI4(reg)        " fp.trunc.s f2,f%0,%c\n fp.mfc %c,f2\n"  ( a->syms[0]->u.c.v.i==4 ? 2:LBURG_MAX )
+reg  : CVFI4(reg)        " fp.trunc.d f2,f%0,%c\n fp.mfc %c,f2\n"  ( a->syms[0]->u.c.v.i==8 ? 2:LBURG_MAX )
 
 
 !
@@ -645,28 +651,6 @@ stmt : LABELV           "\n%a:\n"
 !
 
 !
-! address constants      
-!
-!  FIXME: acon c32 rule seems to act strange, maybe redefine here without refencing c32
-!
-acon  : c32              "%0"      
-acon  : ADDRGP4          "%a"      
-
-!
-! offset indirect 
-!
-aimm : acon             " imm #%0   ; aimm:acon\n"      1
-
-addr : ADDI4(reg,aimm)  " .imm(%0)"     1
-addr : ADDU4(reg,aimm)  " .imm(%0)"     1
-addr : ADDP4(reg,aimm)  " .imm(%0)"     1
-
-!
-! load address constant into register
-!
-reg  : acon             " imm #%0   ; reg:acon\n mov %c,imm\n"  3
-
-!
 ! plain register indirect
 !
 addr : reg              "(%0)"
@@ -676,8 +660,9 @@ addr : reg              "(%0)"
 !
 ! TODO: catch stack offset > 60 and build with .imm sequence like aimm
 !
+! FIXME: does ADDRFP also need a -8 if using sp ???
 !
-addr : ADDRFP4          "%a+%F(sp)"        
+addr : ADDRFP4          "%a+%F-8(sp)"        
 
 !
 ! ADDRLP4 needs a "-8" to account for SIZE_PC_FP_SAVE ( offset from top of stack frame to end of locals )
@@ -687,11 +672,47 @@ addr : ADDRFP4          "%a+%F(sp)"
 !       how different offset for ADDRFP was handled
 !
 addr : ADDRLP4          "%a+%F-8(sp)"        
-     
+
+
+!
+! address constants      
+!
+acon  : ADDRGP4          "%a"      
+acon  : c32              "%0"      
+
+
+!!
+!! old addressing patterns
+!!   - shared pattern resulted in other imm operations between aimm offset load and use
+!!   - combined with load/store patterns to force monolithic imm+memory_access sequence
+!!
+!!!
+!!! offset indirect 
+!!!
+!!aimm : acon             " imm #%0   ; aimm:acon\n"      
+!!
+!!addr : ADDI4(reg,aimm)  " .imm(%0)"     1
+!!addr : ADDU4(reg,aimm)  " .imm(%0)"     1
+!!addr : ADDP4(reg,aimm)  " .imm(%0)"     1
+!!
+
+
+!
+! global addressing
+!
+gaddr : ADDRGP4    "%a"
+                  
+!!
+!! not needed when ADDRGP is included in c32
+!!
+!!reg   : ADDRGP4    " imm #%a   ; reg:ADDRGP4\n mov %c,imm\n"       2
+!!
+
+
 !
 ! lea rule
 !
-reg  : addr             " lea %c,%0   ; reg:addr\n"  2
+reg  : addr            " lea %c,%0   ; reg:addr\n"      1
 
 
 !
@@ -701,63 +722,170 @@ reg  : addr             " lea %c,%0   ; reg:addr\n"  2
 !
 ! basic loads
 !
-reg  :  INDIRI1(addr)            " ld.b %c,%0\n"   1
-reg  :  INDIRU1(addr)            " ld.ub %c,%0\n"  1
+reg  :  INDIRI1(addr)                       " ld.b %c,%0\n"         1
+reg  :  INDIRI1(gaddr)            " imm #%0\n ld.b %c,(imm)\n"      1
+reg  :  INDIRI1(ADDI4(reg,acon))  " imm #%1\n ld.b %c,.imm(%0)\n"   1
+reg  :  INDIRI1(ADDU4(reg,acon))  " imm #%1\n ld.b %c,.imm(%0)\n"   1
+reg  :  INDIRI1(ADDP4(reg,acon))  " imm #%1\n ld.b %c,.imm(%0)\n"   1
 
-reg  :  INDIRI2(addr)            " ld.w %c,%0\n"   1
-reg  :  INDIRU2(addr)            " ld.uw %c,%0\n"  1
+reg  :  INDIRU1(addr)                       " ld.ub %c,%0\n"        1
+reg  :  INDIRU1(gaddr)            " imm #%0\n ld.ub %c,(imm)\n"     1
+reg  :  INDIRU1(ADDI4(reg,acon))  " imm #%1\n ld.ub %c,.imm(%0)\n"  1
+reg  :  INDIRU1(ADDU4(reg,acon))  " imm #%1\n ld.ub %c,.imm(%0)\n"  1
+reg  :  INDIRU1(ADDP4(reg,acon))  " imm #%1\n ld.ub %c,.imm(%0)\n"  1
 
-reg  :  INDIRI4(addr)            " ld.q %c,%0\n"   1
-reg  :  INDIRU4(addr)            " ld.q %c,%0\n"   1
+reg  :  INDIRI2(addr)                       " ld.w  %c,%0\n"        1
+reg  :  INDIRI2(gaddr)            " imm #%0\n ld.w  %c,(imm)\n"     1
+reg  :  INDIRI2(ADDI4(reg,acon))  " imm #%1\n ld.w  %c,.imm(%0)\n"  1
+reg  :  INDIRI2(ADDU4(reg,acon))  " imm #%1\n ld.w  %c,.imm(%0)\n"  1
+reg  :  INDIRI2(ADDP4(reg,acon))  " imm #%1\n ld.w  %c,.imm(%0)\n"  1
+
+reg  :  INDIRU2(addr)                       " ld.uw %c,%0\n"        1
+reg  :  INDIRU2(gaddr)            " imm #%0\n ld.uw %c,(imm)\n"     1
+reg  :  INDIRU2(ADDI4(reg,acon))  " imm #%1\n ld.uw %c,.imm(%0)\n"  1
+reg  :  INDIRU2(ADDU4(reg,acon))  " imm #%1\n ld.uw %c,.imm(%0)\n"  1
+reg  :  INDIRU2(ADDP4(reg,acon))  " imm #%1\n ld.uw %c,.imm(%0)\n"  1
+
+reg  :  INDIRI4(addr)                       " ld.q  %c,%0\n"        1
+reg  :  INDIRI4(gaddr)            " imm #%0\n ld.q  %c,(imm)\n"     1
+reg  :  INDIRI4(ADDI4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+reg  :  INDIRI4(ADDU4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+reg  :  INDIRI4(ADDP4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+
+reg  :  INDIRU4(addr)                       " ld.q  %c,%0\n"        1
+reg  :  INDIRU4(gaddr)            " imm #%0\n ld.q  %c,(imm)\n"     1
+reg  :  INDIRU4(ADDI4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+reg  :  INDIRU4(ADDU4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+reg  :  INDIRU4(ADDP4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
                                                   
-reg  :  INDIRP4(addr)            " ld.q %c,%0\n"   1
+reg  :  INDIRP4(addr)                       " ld.q  %c,%0\n"        1
+reg  :  INDIRP4(gaddr)            " imm #%0\n ld.q  %c,(imm)\n"     1
+reg  :  INDIRP4(ADDI4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+reg  :  INDIRP4(ADDU4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
+reg  :  INDIRP4(ADDP4(reg,acon))  " imm #%1\n ld.q  %c,.imm(%0)\n"  1
 
 
 !
 ! loads with size conversion
 !
-reg  :  CVII4(INDIRI1(addr))     " ld.b %c,%0\n"   1
-reg  :  CVII4(INDIRI2(addr))     " ld.w %c,%0\n"   1
+reg  :  CVII4(INDIRI1(addr))                       " ld.b %c,%0\n"          1
+reg  :  CVII4(INDIRI1(gaddr))            " imm #%0\n ld.b %c,(imm)\n"       1
+reg  :  CVII4(INDIRI1(ADDI4(reg,acon)))  " imm #%1\n ld.b %c,.imm(%0)\n"    1
+reg  :  CVII4(INDIRI1(ADDU4(reg,acon)))  " imm #%1\n ld.b %c,.imm(%0)\n"    1
+reg  :  CVII4(INDIRI1(ADDP4(reg,acon)))  " imm #%1\n ld.b %c,.imm(%0)\n"    1
 
-reg  :  CVUU4(INDIRU1(addr))     " ld.ub %c,%0\n"  1
-reg  :  CVUU4(INDIRU2(addr))     " ld.uw %c,%0\n"  1
+reg  :  CVII4(INDIRI2(addr))                       " ld.w %c,%0\n"          1
+reg  :  CVII4(INDIRI2(gaddr))            " imm #%0\n ld.w %c,(imm)\n"       1
+reg  :  CVII4(INDIRI2(ADDI4(reg,acon)))  " imm #%1\n ld.w %c,.imm(%0)\n"    1
+reg  :  CVII4(INDIRI2(ADDU4(reg,acon)))  " imm #%1\n ld.w %c,.imm(%0)\n"    1
+reg  :  CVII4(INDIRI2(ADDP4(reg,acon)))  " imm #%1\n ld.w %c,.imm(%0)\n"    1
 
-reg  :  CVUI4(INDIRU1(addr))     " ld.ub %c,%0\n"  1
-reg  :  CVUI4(INDIRU2(addr))     " ld.uw %c,%0\n"  1
+reg  :  CVUU4(INDIRU1(addr))                       " ld.ub %c,%0\n"         1
+reg  :  CVUU4(INDIRU1(gaddr))            " imm #%0\n ld.ub %c,(imm)\n"      1
+reg  :  CVUU4(INDIRU1(ADDI4(reg,acon)))  " imm #%1\n ld.ub %c,.imm(%0)\n"   1
+reg  :  CVUU4(INDIRU1(ADDU4(reg,acon)))  " imm #%1\n ld.ub %c,.imm(%0)\n"   1
+reg  :  CVUU4(INDIRU1(ADDP4(reg,acon)))  " imm #%1\n ld.ub %c,.imm(%0)\n"   1
+
+reg  :  CVUU4(INDIRU2(addr))                       " ld.uw %c,%0\n"         1
+reg  :  CVUU4(INDIRU2(gaddr))            " imm #%0\n ld.uw %c,(imm)\n"      1
+reg  :  CVUU4(INDIRU2(ADDI4(reg,acon)))  " imm #%1\n ld.uw %c,.imm(%0)\n"   1
+reg  :  CVUU4(INDIRU2(ADDU4(reg,acon)))  " imm #%1\n ld.uw %c,.imm(%0)\n"   1
+reg  :  CVUU4(INDIRU2(ADDP4(reg,acon)))  " imm #%1\n ld.uw %c,.imm(%0)\n"   1
+
+reg  :  CVUI4(INDIRU1(addr))                       " ld.ub %c,%0\n"         1
+reg  :  CVUI4(INDIRU1(gaddr))            " imm #%0\n ld.ub %c,(imm)\n"      1
+reg  :  CVII4(INDIRU1(ADDI4(reg,acon)))  " imm #%1\n ld.ub %c,.imm(%0)\n"   1
+reg  :  CVII4(INDIRU1(ADDU4(reg,acon)))  " imm #%1\n ld.ub %c,.imm(%0)\n"   1
+reg  :  CVII4(INDIRU1(ADDP4(reg,acon)))  " imm #%1\n ld.ub %c,.imm(%0)\n"   1
+
+reg  :  CVUI4(INDIRU2(addr))                       " ld.uw %c,%0\n"         1
+reg  :  CVUI4(INDIRU2(gaddr))            " imm #%0\n ld.uw %c,(imm)\n"      1
+reg  :  CVUI4(INDIRU2(ADDI4(reg,acon)))  " imm #%1\n ld.uw %c,.imm(%0)\n"   1
+reg  :  CVUI4(INDIRU2(ADDU4(reg,acon)))  " imm #%1\n ld.uw %c,.imm(%0)\n"   1
+reg  :  CVUI4(INDIRU2(ADDP4(reg,acon)))  " imm #%1\n ld.uw %c,.imm(%0)\n"   1
 
      
 !
 ! stores
 !
-stmt :  ASGNI1(addr,reg)         " st.b %1,%0\n"   1
-stmt :  ASGNU1(addr,reg)         " st.b %1,%0\n"   1
+stmt :  ASGNI1(addr,reg)                       " st.b %1,%0\n"         1
+stmt :  ASGNI1(gaddr,reg)            " imm #%0\n st.b %1,(imm)\n"      1
+stmt :  ASGNI1(ADDI4(reg,acon),reg)  " imm #%1\n st.b %2,.imm(%0)\n"   1
+stmt :  ASGNI1(ADDU4(reg,acon),reg)  " imm #%1\n st.b %2,.imm(%0)\n"   1
+stmt :  ASGNI1(ADDP4(reg,acon),reg)  " imm #%1\n st.b %2,.imm(%0)\n"   1
 
-stmt :  ASGNI2(addr,reg)         " st.w %1,%0\n"   1
-stmt :  ASGNU2(addr,reg)         " st.w %1,%0\n"   1
+stmt :  ASGNU1(addr,reg)                       " st.b %1,%0\n"         1
+stmt :  ASGNU1(gaddr,reg)            " imm #%0\n st.b %1,(imm)\n"      1
+stmt :  ASGNU1(ADDI4(reg,acon),reg)  " imm #%1\n st.b %2,.imm(%0)\n"   1
+stmt :  ASGNU1(ADDU4(reg,acon),reg)  " imm #%1\n st.b %2,.imm(%0)\n"   1
+stmt :  ASGNU1(ADDP4(reg,acon),reg)  " imm #%1\n st.b %2,.imm(%0)\n"   1
 
-stmt :  ASGNI4(addr,reg)         " st.q %1,%0\n"   1
-stmt :  ASGNU4(addr,reg)         " st.q %1,%0\n"   1
+stmt :  ASGNI2(addr,reg)                       " st.w %1,%0\n"         1
+stmt :  ASGNI2(gaddr,reg)            " imm #%0\n st.w %1,(imm)\n"      1
+stmt :  ASGNI2(ADDI4(reg,acon),reg)  " imm #%1\n st.w %2,.imm(%0)\n"   1
+stmt :  ASGNI2(ADDU4(reg,acon),reg)  " imm #%1\n st.w %2,.imm(%0)\n"   1
+stmt :  ASGNI2(ADDP4(reg,acon),reg)  " imm #%1\n st.w %2,.imm(%0)\n"   1
 
-stmt :  ASGNP4(addr,reg)         " st.q %1,%0\n"   1
+stmt :  ASGNU2(addr,reg)                       " st.w %1,%0\n"         1
+stmt :  ASGNU2(gaddr,reg)            " imm #%0\n st.w %1,(imm)\n"      1
+stmt :  ASGNU2(ADDI4(reg,acon),reg)  " imm #%1\n st.w %2,.imm(%0)\n"   1
+stmt :  ASGNU2(ADDU4(reg,acon),reg)  " imm #%1\n st.w %2,.imm(%0)\n"   1
+stmt :  ASGNU2(ADDP4(reg,acon),reg)  " imm #%1\n st.w %2,.imm(%0)\n"   1
+
+stmt :  ASGNI4(addr,reg)                       " st.q %1,%0\n"         1
+stmt :  ASGNI4(gaddr,reg)            " imm #%0\n st.q %1,(imm)\n"      1
+stmt :  ASGNI4(ADDI4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+stmt :  ASGNI4(ADDU4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+stmt :  ASGNI4(ADDP4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+
+stmt :  ASGNU4(addr,reg)                       " st.q %1,%0\n"         1
+stmt :  ASGNU4(gaddr,reg)            " imm #%0\n st.q %1,(imm)\n"      1
+stmt :  ASGNU4(ADDI4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+stmt :  ASGNU4(ADDU4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+stmt :  ASGNU4(ADDP4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+
+stmt :  ASGNP4(addr,reg)                       " st.q %1,%0\n"         1
+stmt :  ASGNP4(gaddr,reg)            " imm #%0\n st.q %1,(imm)\n"      1
+stmt :  ASGNP4(ADDI4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+stmt :  ASGNP4(ADDU4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
+stmt :  ASGNP4(ADDP4(reg,acon),reg)  " imm #%1\n st.q %2,.imm(%0)\n"   1
 
 
 !
 ! TODO: floating point load/store
 !
-reg  :  INDIRF4(addr)     " mips_l.s f%c,%0\n"     1
-reg  :  INDIRF8(addr)     " mips_l.d f%c,%0\n"     1
+reg  :  INDIRF4(addr)                          " mips_l.s f%c,%0\n"         1
+reg  :  INDIRF4(gaddr)               " imm #%0\n mips_l.s f%c,(imm)\n"      1
+reg  :  INDIRF4(ADDI4(reg,acon))     " imm #%1\n mips_l.s f%c,.imm(%0)\n"   1
+reg  :  INDIRF4(ADDU4(reg,acon))     " imm #%1\n mips_l.s f%c,.imm(%0)\n"   1
+reg  :  INDIRF4(ADDP4(reg,acon))     " imm #%1\n mips_l.s f%c,.imm(%0)\n"   1
 
-stmt :  ASGNF4(addr,reg)  " mips_s.s f%1,%0\n"     1
-stmt :  ASGNF8(addr,reg)  " mips_s.d f%1,%0\n"     1
+reg  :  INDIRF8(addr)                          " mips_l.d f%c,%0\n"         1
+reg  :  INDIRF8(gaddr)               " imm #%0\n mips_l.d f%c,(imm)\n"      1
+reg  :  INDIRF8(ADDI4(reg,acon))     " imm #%1\n mips_l.d f%c,.imm(%0)\n"   1
+reg  :  INDIRF8(ADDU4(reg,acon))     " imm #%1\n mips_l.d f%c,.imm(%0)\n"   1
+reg  :  INDIRF8(ADDP4(reg,acon))     " imm #%1\n mips_l.d f%c,.imm(%0)\n"   1
 
+stmt :  ASGNF4(addr,reg)                       " mips_s.s f%1,%0\n"         1
+stmt :  ASGNF4(gaddr,reg)            " imm #%0\n mips_s.s f%1,(imm)\n"      1
+stmt :  ASGNF4(ADDI4(reg,acon),reg)  " imm #%1\n mips_s.s f%2,.imm(%0)\n"   1
+stmt :  ASGNF4(ADDU4(reg,acon),reg)  " imm #%1\n mips_s.s f%2,.imm(%0)\n"   1
+stmt :  ASGNF4(ADDP4(reg,acon),reg)  " imm #%1\n mips_s.s f%2,.imm(%0)\n"   1
 
-!
+stmt :  ASGNF8(addr,reg)                       " mips_s.d f%1,%0\n"         1
+stmt :  ASGNF8(gaddr,reg)            " imm #%0\n mips_s.d f%1,(imm)\n"      1
+stmt :  ASGNF8(ADDI4(reg,acon),reg)  " imm #%1\n mips_s.d %2,.imm(%0)\n"    1
+stmt :  ASGNF8(ADDU4(reg,acon),reg)  " imm #%1\n mips_s.d %2,.imm(%0)\n"    1
+stmt :  ASGNF8(ADDP4(reg,acon),reg)  " imm #%1\n mips_s.d %2,.imm(%0)\n"    1
+
+                                                                 
+!                                                                
 ! register moves
-!
-reg  : LOADI1(reg)    " mov %c,%0\n"  move(a)
+!                                                                
+reg  : LOADI1(reg)    " mov %c,%0\n"  move(a)                    
 reg  : LOADU1(reg)    " mov %c,%0\n"  move(a)
-
-reg  : LOADI2(reg)    " mov %c,%0\n"  move(a)
+                                                                 
+reg  : LOADI2(reg)    " mov %c,%0\n"  move(a)                    
 reg  : LOADU2(reg)    " mov %c,%0\n"  move(a)
 
 reg  : LOADI4(reg)    " mov %c,%0\n"  move(a)
