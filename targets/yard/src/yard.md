@@ -368,35 +368,35 @@ reg  :  c32     " imm #%0\n mov %c,imm   ; reg:c32\n"     4
 !
 ! logical ops
 !
-reg  : BANDI4(reg,reg)   "@ mov %c,%0\n and %c,%1 \n"                1
-reg  : BANDI4(reg,cg5)   "@ mov %c,%0\n and %c,#%1 \n"               1
-reg  : BANDI4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
-reg  : BANDI4(reg,c32)   "@ mov %c,%0\n imm #%1   \n and %c,imm\n"   3
+reg  : BANDI4(reg,reg)   "? mov %c,%0\n and %c,%1 \n"                1
+reg  : BANDI4(reg,cg5)   "? mov %c,%0\n and %c,#%1 \n"               1
+reg  : BANDI4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
+reg  : BANDI4(reg,c32)   "? mov %c,%0\n imm #%1   \n and %c,imm\n"   3
 
-reg  : BANDU4(reg,reg)   "@ mov %c,%0\n and %c,%1\n"                 1
-reg  : BANDU4(reg,cg5)   "@ mov %c,%0\n and %c,#%1\n"                1
-reg  : BANDU4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
-reg  : BANDU4(reg,c32)   "@ mov %c,%0\n imm #%1   \n and %c,imm\n"   3
+reg  : BANDU4(reg,reg)   "? mov %c,%0\n and %c,%1\n"                 1
+reg  : BANDU4(reg,cg5)   "? mov %c,%0\n and %c,#%1\n"                1
+reg  : BANDU4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n and %c,imm\n"   2
+reg  : BANDU4(reg,c32)   "? mov %c,%0\n imm #%1   \n and %c,imm\n"   3
 
-reg  : BORI4(reg,reg)    "@ mov %c,%0\n or %c,%1  \n"                1
-reg  : BORI4(reg,cg5)    "@ mov %c,%0\n or %c,#%1  \n"               1
-reg  : BORI4(reg,c12)    "@ mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
-reg  : BORI4(reg,c32)    "@ mov %c,%0\n imm #%1   \n or %c,imm\n"    3
+reg  : BORI4(reg,reg)    "? mov %c,%0\n or %c,%1  \n"                1
+reg  : BORI4(reg,cg5)    "? mov %c,%0\n or %c,#%1  \n"               1
+reg  : BORI4(reg,c12)    "? mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
+reg  : BORI4(reg,c32)    "? mov %c,%0\n imm #%1   \n or %c,imm\n"    3
 
-reg  : BORU4(reg,reg)    "@ mov %c,%0\n or %c,%1\n"                  1
-reg  : BORU4(reg,cg5)    "@ mov %c,%0\n or %c,#%1\n"                 1
-reg  : BORU4(reg,c12)    "@ mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
-reg  : BORU4(reg,c32)    "@ mov %c,%0\n imm #%1   \n or %c,imm\n"    3
+reg  : BORU4(reg,reg)    "? mov %c,%0\n or %c,%1\n"                  1
+reg  : BORU4(reg,cg5)    "? mov %c,%0\n or %c,#%1\n"                 1
+reg  : BORU4(reg,c12)    "? mov %c,%0\n imm12 #%1 \n or %c,imm\n"    2
+reg  : BORU4(reg,c32)    "? mov %c,%0\n imm #%1   \n or %c,imm\n"    3
 
-reg  : BXORI4(reg,reg)   "@ mov %c,%0\n xor %c,%1 \n"                1
-reg  : BXORI4(reg,cg5)   "@ mov %c,%0\n xor %c,#%1 \n"               1
-reg  : BXORI4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
-reg  : BXORI4(reg,c32)   "@ mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
+reg  : BXORI4(reg,reg)   "? mov %c,%0\n xor %c,%1 \n"                1
+reg  : BXORI4(reg,cg5)   "? mov %c,%0\n xor %c,#%1 \n"               1
+reg  : BXORI4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
+reg  : BXORI4(reg,c32)   "? mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
 
-reg  : BXORU4(reg,reg)   "@ mov %c,%0\n xor %c,%1\n"                 1
-reg  : BXORU4(reg,cg5)   "@ mov %c,%0\n xor %c,#%1\n"                1
-reg  : BXORU4(reg,c12)   "@ mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
-reg  : BXORU4(reg,c32)   "@ mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
+reg  : BXORU4(reg,reg)   "? mov %c,%0\n xor %c,%1\n"                 1
+reg  : BXORU4(reg,cg5)   "? mov %c,%0\n xor %c,#%1\n"                1
+reg  : BXORU4(reg,c12)   "? mov %c,%0\n imm12 #%1 \n xor %c,imm\n"   2
+reg  : BXORU4(reg,c32)   "? mov %c,%0\n imm #%1   \n xor %c,imm\n"   3
 
 ! 
 ! note, no "? mov" prefix is needed for complement, because move.not has independent source/dest
@@ -408,35 +408,35 @@ reg  : BCOMU4(reg)       " mov.not %c,%0\n"   1
 !
 ! logicals again, this time around with rules to emit .not variants for ~register_operand
 !
-reg  : BANDI4(reg,BCOMI4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
-reg  : BANDI4(reg,BCOMI4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
-reg  : BANDI4(reg,BCOMU4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
-reg  : BANDI4(reg,BCOMU4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
+reg  : BANDI4(reg,BCOMI4(reg))   "? mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDI4(reg,BCOMI4(cg5))   "? mov %c,%0\n and.not %c,#%1\n"    0
+reg  : BANDI4(reg,BCOMU4(reg))   "? mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDI4(reg,BCOMU4(cg5))   "? mov %c,%0\n and.not %c,#%1\n"    0
 
-reg  : BANDU4(reg,BCOMI4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
-reg  : BANDU4(reg,BCOMI4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
-reg  : BANDU4(reg,BCOMU4(reg))   "@ mov %c,%0\n and.not %c,%1\n"     0
-reg  : BANDU4(reg,BCOMU4(cg5))   "@ mov %c,%0\n and.not %c,#%1\n"    0
+reg  : BANDU4(reg,BCOMI4(reg))   "? mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDU4(reg,BCOMI4(cg5))   "? mov %c,%0\n and.not %c,#%1\n"    0
+reg  : BANDU4(reg,BCOMU4(reg))   "? mov %c,%0\n and.not %c,%1\n"     0
+reg  : BANDU4(reg,BCOMU4(cg5))   "? mov %c,%0\n and.not %c,#%1\n"    0
 
-reg  : BORI4(reg,BCOMI4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
-reg  : BORI4(reg,BCOMI4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
-reg  : BORI4(reg,BCOMU4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
-reg  : BORI4(reg,BCOMU4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
+reg  : BORI4(reg,BCOMI4(reg))    "? mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORI4(reg,BCOMI4(cg5))    "? mov %c,%0\n or.not %c,#%1\n"     0
+reg  : BORI4(reg,BCOMU4(reg))    "? mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORI4(reg,BCOMU4(cg5))    "? mov %c,%0\n or.not %c,#%1\n"     0
 
-reg  : BORU4(reg,BCOMI4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
-reg  : BORU4(reg,BCOMI4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
-reg  : BORU4(reg,BCOMU4(reg))    "@ mov %c,%0\n or.not %c,%1\n"      0
-reg  : BORU4(reg,BCOMU4(cg5))    "@ mov %c,%0\n or.not %c,#%1\n"     0
+reg  : BORU4(reg,BCOMI4(reg))    "? mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORU4(reg,BCOMI4(cg5))    "? mov %c,%0\n or.not %c,#%1\n"     0
+reg  : BORU4(reg,BCOMU4(reg))    "? mov %c,%0\n or.not %c,%1\n"      0
+reg  : BORU4(reg,BCOMU4(cg5))    "? mov %c,%0\n or.not %c,#%1\n"     0
 
-reg  : BXORI4(reg,BCOMI4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
-reg  : BXORI4(reg,BCOMI4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
-reg  : BXORI4(reg,BCOMU4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
-reg  : BXORI4(reg,BCOMU4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
+reg  : BXORI4(reg,BCOMI4(reg))   "? mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORI4(reg,BCOMI4(cg5))   "? mov %c,%0\n xor.not %c,#%1\n"    0
+reg  : BXORI4(reg,BCOMU4(reg))   "? mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORI4(reg,BCOMU4(cg5))   "? mov %c,%0\n xor.not %c,#%1\n"    0
 
-reg  : BXORU4(reg,BCOMI4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
-reg  : BXORU4(reg,BCOMI4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
-reg  : BXORU4(reg,BCOMU4(reg))   "@ mov %c,%0\n xor.not %c,%1\n"     0
-reg  : BXORU4(reg,BCOMU4(cg5))   "@ mov %c,%0\n xor.not %c,#%1\n"    0
+reg  : BXORU4(reg,BCOMI4(reg))   "? mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORU4(reg,BCOMI4(cg5))   "? mov %c,%0\n xor.not %c,#%1\n"    0
+reg  : BXORU4(reg,BCOMU4(reg))   "? mov %c,%0\n xor.not %c,%1\n"     0
+reg  : BXORU4(reg,BCOMU4(cg5))   "? mov %c,%0\n xor.not %c,#%1\n"    0
 
 
 
@@ -462,10 +462,10 @@ sc5  : CNSTU4            " #%a"  range(a,0,31)
 !                        
 ! not used - full shifts needed in hardware                       
 !                        
-!reg  : LSHI4(reg,sc5)    "? mov %c,%0\n lsl %c,%1\n"  1 
-!reg  : LSHU4(reg,sc5)    "? mov %c,%0\n lsl %c,%1\n"  1 
-!reg  : RSHI4(reg,sc5)    "? mov %c,%0\n asr %c,%1\n"  1 
-!reg  : RSHU4(reg,sc5)    "? mov %c,%0\n lsr %c,%1\n"  1 
+!reg  : LSHI4(reg,sc5)    "@ mov %c,%0\n lsl %c,%1\n"  1 
+!reg  : LSHU4(reg,sc5)    "@ mov %c,%0\n lsl %c,%1\n"  1 
+!reg  : RSHI4(reg,sc5)    "@ mov %c,%0\n asr %c,%1\n"  1 
+!reg  : RSHU4(reg,sc5)    "@ mov %c,%0\n lsr %c,%1\n"  1 
 
 
 !
@@ -485,15 +485,15 @@ sc2  : CNSTU2            " #%a"  range(a,2,2)
 sc2  : CNSTI4            " #%a"  range(a,2,2)
 sc2  : CNSTU4            " #%a"  range(a,2,2)
 
-reg  : LSHI4(reg,sc1)    "? mov %c,%0\n lsl %c,#1\n"              1
-reg  : LSHU4(reg,sc1)    "? mov %c,%0\n lsl %c,#1\n"              1
-reg  : RSHI4(reg,sc1)    "? mov %c,%0\n asr %c,#1\n"              1
-reg  : RSHU4(reg,sc1)    "? mov %c,%0\n lsr %c,#1\n"              1
+reg  : LSHI4(reg,sc1)    "@ mov %c,%0\n lsl %c,#1\n"              1
+reg  : LSHU4(reg,sc1)    "@ mov %c,%0\n lsl %c,#1\n"              1
+reg  : RSHI4(reg,sc1)    "@ mov %c,%0\n asr %c,#1\n"              1
+reg  : RSHU4(reg,sc1)    "@ mov %c,%0\n lsr %c,#1\n"              1
 
-reg  : LSHI4(reg,sc2)    "? mov %c,%0\n lsl %c,#1\n lsl %c,#1\n"  2
-reg  : LSHU4(reg,sc2)    "? mov %c,%0\n lsl %c,#1\n lsl %c,#1\n"  2
-reg  : RSHI4(reg,sc2)    "? mov %c,%0\n asr %c,#1\n asr %c,#1\n"  2
-reg  : RSHU4(reg,sc2)    "? mov %c,%0\n lsr %c,#1\n lsr %c,#1\n"  2
+reg  : LSHI4(reg,sc2)    "@ mov %c,%0\n lsl %c,#1\n lsl %c,#1\n"  2
+reg  : LSHU4(reg,sc2)    "@ mov %c,%0\n lsl %c,#1\n lsl %c,#1\n"  2
+reg  : RSHI4(reg,sc2)    "@ mov %c,%0\n asr %c,#1\n asr %c,#1\n"  2
+reg  : RSHU4(reg,sc2)    "@ mov %c,%0\n lsr %c,#1\n lsr %c,#1\n"  2
 
 !
 ! catch any remaining shifts & print error in emit2
@@ -540,39 +540,39 @@ reg  : SUBU4(reg,reg)    "#\n"                                       1
 !     
 ! FIXME: should reg-constant operations still use patterns ???
 !     
-reg  : SUBI4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
-reg  : SUBI4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
-reg  : SUBI4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
+reg  : SUBI4(reg,ca5)    "@ mov %c,%0\n sub %c, #%1\n"               1
+reg  : SUBI4(reg,c12)    "@ mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
+reg  : SUBI4(reg,c32)    "@ mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
-reg  : SUBP4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
-reg  : SUBP4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
-reg  : SUBP4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
+reg  : SUBP4(reg,ca5)    "@ mov %c,%0\n sub %c, #%1\n"               1
+reg  : SUBP4(reg,c12)    "@ mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
+reg  : SUBP4(reg,c32)    "@ mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
-reg  : SUBU4(reg,ca5)    "? mov %c,%0\n sub %c, #%1\n"               1
-reg  : SUBU4(reg,c12)    "? mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
-reg  : SUBU4(reg,c32)    "? mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
+reg  : SUBU4(reg,ca5)    "@ mov %c,%0\n sub %c, #%1\n"               1
+reg  : SUBU4(reg,c12)    "@ mov %c,%0\n imm12 #%1\n sub %c,imm\n"    2
+reg  : SUBU4(reg,c32)    "@ mov %c,%0\n imm #%1  \n sub %c,imm\n"    3
 
 !     
-! FIXME: double check "? mov" sense for rsub with register source
+! FIXME: double check "@ mov" sense for rsub with register source
 !        should there even be a '?' when the constant comes first
 !     
-reg  : SUBI4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
-reg  : SUBI4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
-reg  : SUBI4(c32,reg)    "? mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
+reg  : SUBI4(ca5,reg)    "@ mov %c,%1\n rsub %c, #%0\n"              1
+reg  : SUBI4(c12,reg)    "@ mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
+reg  : SUBI4(c32,reg)    "@ mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
 
-reg  : SUBP4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
-reg  : SUBP4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
-reg  : SUBP4(c32,reg)    "? mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
+reg  : SUBP4(ca5,reg)    "@ mov %c,%1\n rsub %c, #%0\n"              1
+reg  : SUBP4(c12,reg)    "@ mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
+reg  : SUBP4(c32,reg)    "@ mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
 
-reg  : SUBU4(ca5,reg)    "? mov %c,%1\n rsub %c, #%0\n"              1
-reg  : SUBU4(c12,reg)    "? mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
-reg  : SUBU4(c32,reg)    "? mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
+reg  : SUBU4(ca5,reg)    "@ mov %c,%1\n rsub %c, #%0\n"              1
+reg  : SUBU4(c12,reg)    "@ mov %c,%1\n imm12 #%0\n rsub %c,imm\n"   2
+reg  : SUBU4(c32,reg)    "@ mov %c,%1\n imm #%0  \n rsub %c,imm\n"   3
 
 
 !
 ! negate has one operand, integer type only
 !
-reg  : NEGI4(reg)        "? mov %c,%0\n neg %c\n"     1
+reg  : NEGI4(reg)        "@ mov %c,%0\n neg %c\n"     1
 
 !
 ! extra negate pattern to catch complement-and-add-one emitted by lcc for negation of an unsigned 
@@ -580,7 +580,7 @@ reg  : NEGI4(reg)        "? mov %c,%0\n neg %c\n"     1
 !
 cc1  : CNSTI4                  " #%a"  range(a,1,1)
 cc1  : CNSTU4                  " #%a"  range(a,1,1)
-reg  : ADDU4(BCOMU4(reg),cc1)  "? mov %c,%0\n neg %c\n"     1
+reg  : ADDU4(BCOMU4(reg),cc1)  "@ mov %c,%0\n neg %c\n"     1
 
 
 !
