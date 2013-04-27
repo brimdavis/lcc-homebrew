@@ -470,7 +470,7 @@ emitasm (Node p, int nt)
 
 #ifdef PATCH_2OP_EMIT_SWAPREG
 
-              if (*fmt == '@')
+              if (*fmt == '?')
                 {
                   swap_flag = 1;
 
@@ -506,7 +506,7 @@ emitasm (Node p, int nt)
 
 #ifdef PATCH_2OP_EMIT_SWAPREG
 
-                || ( (p->x.kids[1]) && (p->syms[RX] == p->x.kids[1]->syms[RX]) && (*fmt == '@') )
+                || ( (p->x.kids[1]) && (p->syms[RX] == p->x.kids[1]->syms[RX]) && (*fmt == '?') )
 #endif
 
               )
@@ -752,7 +752,7 @@ static void addload(Node p)
        if (p->x.inst && q->x.inst) {
          rulenum = getrule(q, q->x.inst);
 
-         if (IR->x._templates[rulenum][0] == '?') {
+         if (IR->x._templates[rulenum][0] == '@') {
            Symbol s = q->syms[RX];
            assert(s);
 
