@@ -1440,20 +1440,29 @@ static void emit2(Node p)
       print( ";; emit2 SUB: %s = %s - %s\n", ireg[dst]->x.name, ireg[src0]->x.name, ireg[src1]->x.name );
 
       //
-      // fixup any operand overwrites by either swapping operands or switching to rsub
+      // handle two operand destination/src overlaps
       //
       if ( dst == src0 )
       {
+        //
+        // omit mov 
+        //
         print(" sub %s,%s\n",  ireg[dst]->x.name, ireg[src1]->x.name );
       }
 
       else if ( dst == src1 )
       {
+        //
+        // fixup %c == %1 by switching to Reverse Subtract
+        //
         print(" rsub %s,%s\n", ireg[dst]->x.name, ireg[src0]->x.name );
       }
 
       else 
       {
+        //
+        // no overlap, emit mov + sub sequence
+        //
         print(" mov %s,%s\n sub %s,%s\n", ireg[dst]->x.name, ireg[src0]->x.name, ireg[dst]->x.name, ireg[src1]->x.name );
       }
 
@@ -1878,6 +1887,16 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
   print(" rts\n");
   print("\n");
+
+  //
+  // create a local immediate table for each function
+  //
+  print("\n");
+  print(" .imm_table\n");
+  print("\n");
+
+
+
 }
 
 
