@@ -1264,7 +1264,7 @@ static void target(Node p)
         //
         // TODO: double register args
         //
-        print( "\n .warn \"Double register args not implemented yet\"\n" );
+        print( "\n .error \"Double register args not implemented yet\"\n" );
       }
 
       break;
@@ -1364,8 +1364,10 @@ static void clobber(Node p)
 //
 static void emit2(Node p) 
 {
-  int src, src0, src1, dst, n;
-  int size, offset;
+  int src, src0, src1, dst;
+  int size, trunc_size;
+  int align, offset;
+  int n;
 
   switch (specific(p->op)) 
   {
@@ -1397,26 +1399,6 @@ static void emit2(Node p)
       {
         print( "\n .error \"Double args not implemented yet\"\n" );
       }
-
-      break;
-
-    //
-    // TODO : ARG+B block copy
-    //
-    case ARG+B:
-      n = p->syms[RX]->u.c.v.i;
-      size = roundup(p->syms[0]->u.c.v.i, 4);
-      offset = max(16 - n, 0);
-
-      print( "\n .error \"ARG+B block copy not implemented yet\"\n" );
-  
-      break;
-  
-    //
-    // TODO : ASGN+B block copy
-    //
-    case ASGN+B:
-      print( "\n .error \"ASGN+B block copy not implemented yet\"\n" );
 
       break;
 
@@ -1513,6 +1495,151 @@ static void emit2(Node p)
 //.L  print(" skip.bc %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
 
       break;
+
+
+    //
+    // ARG+B block copy should not occur when wants_argb = 0
+    //
+    case ARG+B:
+      print( "\n .error \"unexpected ARG+B\"\n" );
+  
+      break;
+  
+    //
+    // TODO : ASGN+B block copy
+    //
+    case ASGN+B:
+      dst   = getregnum(p->x.kids[0]);
+      src   = getregnum(p->x.kids[1]);
+      size  = p->syms[0]->u.c.v.u;
+      align = p->syms[1]->u.c.v.u;
+
+      print( ";\n");
+      print( "; src   = %s \n", ireg[src]->x.name);
+      print( "; dst   = %s \n", ireg[dst]->x.name);
+      print( "; size  = %d \n", size);
+      print( "; align = %d \n", align);
+      print( ";\n");
+      print( " .warn \"ASGN+B block copy not fully implemented yet\"\n" );
+
+      //
+      // FIXME: allocate register in target instead of hardcoding r3
+      //
+      n = genlabel(1);
+
+      if ( align == 1 || size < 2 )
+      {
+        //
+        // TODO: unroll byte loops < 4 (??) bytes
+        //
+
+        //
+        // byte copy loop
+        //
+        print(" mov imm,#%d\n",size);
+        print(".blk_loop_b%d:\n",n);
+        print(" sub.snb imm, #1\n");
+        print(" bra .blk_done%d\n",n);
+        print(" ld.ub r3, .imm(%s) \n",ireg[src]->x.name);
+        print(" bra.d b  .blk_loop_b%d:\n",n);
+        print(" st.b  r3, .imm(%s) \n",ireg[dst]->x.name);
+        print(".blk_done%d\n",n);
+      }
+
+      else if ( align == 2 || size < 4 )
+      {
+        //
+        // size, truncated to wydes ( 2 bytes )
+        //
+        trunc_size = size & 0xFFFFFFFE;
+
+        //
+        // TODO: unroll wyde loops < 8 (??) bytes
+        //
+
+        //
+        // wyde copy loop
+        //
+        print(" imm #%d\n",trunc_size);
+        print(".blk_loop_w%d:\n",n);
+        print(" sub.snb imm, #2\n");
+        print(" bra .blk_done%d\n",n);
+        print(" ld.uw r3, .imm(%s) \n",ireg[src]->x.name);
+        print(" bra.d b  .blk_loop_w%d:\n",n);
+        print(" st.w  r3, .imm(%s) \n",ireg[dst]->x.name);
+        print(".blk_done%d\n",n);
+
+        //
+        // move any residual byte
+        //
+        if ( size & 0x01 )
+        {
+          print(" imm #%d\n",size);
+          print(" ld.ub r3, .imm(%s) \n",ireg[src]->x.name);
+          print(" st.b  r3, .imm(%s) \n",ireg[dst]->x.name);
+        }
+
+      }
+
+      else if ( align == 4 )
+      {
+        //
+        // size, truncated to quads ( 4 bytes )
+        //
+        trunc_size = size & 0xFFFFFFFC;
+
+        //
+        // TODO: check for stack copy => 
+        //        - target fp; 
+        //        - use unrolled fp & sp static offsets for small moves
+        //
+
+        //
+        // TODO: unroll quad loops < 16 (??) bytes
+        //
+
+        //
+        // quad copy loop
+        //
+        print(" imm #%d\n",trunc_size);
+        print(".blk_loop_q%d:\n",n);
+        print(" sub.snb imm, #4\n");
+        print(" bra .blk_done%d\n",n);
+        print(" ld.q r3, .imm(%s) \n",ireg[src]->x.name);
+        print(" bra.d b  .blk_loop_q%d:\n",n);
+        print(" st.q  r3, .imm(%s) \n",ireg[dst]->x.name);
+        print(".blk_done%d\n",n);
+
+        //
+        // move any residual wyde
+        //
+        if ( size & 0x02 )
+        {
+          print(" imm #%d\n", size & 0xFFFFFFFE );
+          print(" ld.uw r3, .imm(%s) \n",ireg[src]->x.name);
+          print(" st.w  r3, .imm(%s) \n",ireg[dst]->x.name);
+        }
+
+        //
+        // move any residual byte
+        //
+        if ( size & 0x01 )
+        {
+          print(" imm #%d\n",size);
+          print(" ld.ub r3, .imm(%s) \n",ireg[src]->x.name);
+          print(" st.b  r3, .imm(%s) \n",ireg[dst]->x.name);
+        }
+
+      }
+
+      else
+      {
+        print( " .error \"Unexpected alignment for block copy\"\n" );
+      }
+
+
+      break;
+
 
   }
 }
@@ -1889,7 +2016,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
 
   //
-  // create a local immediate table for each function
+  // create a local immediate table after each function
   //
   print("\n");
   print(" .imm_table\n");
@@ -2098,21 +2225,22 @@ static void space(int n)
 
 
 //
-// TODO: block copy functions
+// NOTE: block copy support functions are not needed unless 
+//       target.md calls blkcopy() [ located in src\rcc\gen.c ]
 //
 static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) 
 {
-  print( "\n .error \"Block copy functions not implemented yet\"\n" );
+  print( "\n .error \"blkcopy() support functions not implemented\"\n" );
 }
 
 static void blkfetch(int size, int off, int reg, int tmp) 
 {
-  print( "\n .error \"Block copy functions not implemented yet\"\n" );
+  print( "\n .error \"blkcopy() support functions not implemented\"\n" );
 }
 
 static void blkstore(int size, int off, int reg, int tmp) 
 {
-  print( "\n .error \"Block copy functions not implemented yet\"\n" );
+  print( "\n .error \"blkcopy() support functions not implemented\"\n" );
 }
 
 
@@ -2308,23 +2436,25 @@ static void stabsym(Symbol p) {
 //
 Interface yardIR =  
 {
-  1, 1, 0,    /* char */
-  2, 2, 0,    /* short */
-  4, 4, 0,    /* int */
-  4, 4, 0,    /* long */
-  4, 4, 0,    /* long long */
-  4, 4, 1,    /* float */
-  8, 4, 1,    /* double */
-  8, 4, 1,    /* long double */
-  4, 4, 0,    /* T * */
-  0, 4, 0,    /* struct */
+  1, 1, 0,    /* char          */
+  2, 2, 0,    /* short         */
+  4, 4, 0,    /* int           */
+  4, 4, 0,    /* long          */
+  4, 4, 0,    /* long long     */
+  4, 4, 1,    /* float         */
+  8, 4, 1,    /* double        */
+  8, 4, 1,    /* long double   */
+  4, 4, 0,    /* T *           */
+  0, 4, 0,    /* struct        */
 
   0,          /* little_endian */
-  1,          /* mulops_calls */
-  0,          /* wants_callb */
-  1,          /* wants_argb */
+  1,          /* mulops_calls  */
+
+  0,          /* wants_callb   */
+  0,          /* wants_argb    */
+
   1,          /* left_to_right */
-  0,          /* wants_dag */
+  0,          /* wants_dag     */
   0,          /* unsigned_char */ 
 
   address,
