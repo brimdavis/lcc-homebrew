@@ -1540,7 +1540,7 @@ static void emit2(Node p)
       break;
   
     //
-    // TODO : ASGN+B block copy
+    // TODO : finish ASGN+B block copy optimizations
     //
     case ASGN+B:
       dst   = getregnum(p->x.kids[0]);
@@ -1548,16 +1548,11 @@ static void emit2(Node p)
       size  = p->syms[0]->u.c.v.u;
       align = p->syms[1]->u.c.v.u;
 
-      print( ";\n");
-      print( "; src   = %s \n", ireg[src]->x.name);
-      print( "; dst   = %s \n", ireg[dst]->x.name);
-      print( "; size  = %d \n", size);
-      print( "; align = %d \n", align);
-      print( ";\n");
-      print( " .warn \"ASGN+B block copy not fully implemented yet\"\n" );
+      print( "\n; ASGN+B: src = %s   dst = %s   size = %d   align = %d\n", ireg[src]->x.name, ireg[dst]->x.name, size, align);
+      print( " .warn \"ASGN+B block copy not fully tested yet\"\n" );
 
       //
-      // FIXME: allocate register in target instead of hardcoding r3
+      // FIXME: using r12 for temporary data register, need to mark as used; will need to change if fp is used for stack frame addressing
       //
       n = genlabel(1);
 
@@ -1574,9 +1569,9 @@ static void emit2(Node p)
         print(".blk_loop_b%d:\n",n);
         print(" sub.snb imm, #1\n");
         print(" bra .blk_done%d\n",n);
-        print(" ld.ub r3, .imm(%s) \n",ireg[src]->x.name);
-        print(" bra.d b  .blk_loop_b%d:\n",n);
-        print(" st.b  r3, .imm(%s) \n",ireg[dst]->x.name);
+        print(" ld.ub r12, .imm(%s) \n",ireg[src]->x.name);
+        print(" bra.d .blk_loop_b%d\n",n);
+        print(" st.b  r12, .imm(%s) \n",ireg[dst]->x.name);
         print(".blk_done%d\n",n);
       }
 
@@ -1586,7 +1581,7 @@ static void emit2(Node p)
         // size, truncated to wydes ( 2 bytes )
         //
         trunc_size = size & 0xFFFFFFFE;
-
+ 
         //
         // TODO: unroll wyde loops < 8 (??) bytes
         //
@@ -1598,9 +1593,9 @@ static void emit2(Node p)
         print(".blk_loop_w%d:\n",n);
         print(" sub.snb imm, #2\n");
         print(" bra .blk_done%d\n",n);
-        print(" ld.uw r3, .imm(%s) \n",ireg[src]->x.name);
-        print(" bra.d b  .blk_loop_w%d:\n",n);
-        print(" st.w  r3, .imm(%s) \n",ireg[dst]->x.name);
+        print(" ld.uw r12, .imm(%s) \n",ireg[src]->x.name);
+        print(" bra.d .blk_loop_w%d\n",n);
+        print(" st.w  r12, .imm(%s) \n",ireg[dst]->x.name);
         print(".blk_done%d\n",n);
 
         //
@@ -1609,8 +1604,8 @@ static void emit2(Node p)
         if ( size & 0x01 )
         {
           print(" imm #%d\n",size);
-          print(" ld.ub r3, .imm(%s) \n",ireg[src]->x.name);
-          print(" st.b  r3, .imm(%s) \n",ireg[dst]->x.name);
+          print(" ld.ub r12, .imm(%s) \n",ireg[src]->x.name);
+          print(" st.b  r12, .imm(%s) \n",ireg[dst]->x.name);
         }
 
       }
@@ -1624,7 +1619,7 @@ static void emit2(Node p)
 
         //
         // TODO: check for stack copy => 
-        //        - target fp; 
+        //        - target fp ??? using fp, will need another register for data ???; 
         //        - use unrolled fp & sp static offsets for small moves
         //
 
@@ -1639,9 +1634,9 @@ static void emit2(Node p)
         print(".blk_loop_q%d:\n",n);
         print(" sub.snb imm, #4\n");
         print(" bra .blk_done%d\n",n);
-        print(" ld.q r3, .imm(%s) \n",ireg[src]->x.name);
-        print(" bra.d b  .blk_loop_q%d:\n",n);
-        print(" st.q  r3, .imm(%s) \n",ireg[dst]->x.name);
+        print(" ld.q r12, .imm(%s) \n",ireg[src]->x.name);
+        print(" bra.d .blk_loop_q%d\n",n);
+        print(" st.q  r12, .imm(%s) \n",ireg[dst]->x.name);
         print(".blk_done%d\n",n);
 
         //
@@ -1650,8 +1645,8 @@ static void emit2(Node p)
         if ( size & 0x02 )
         {
           print(" imm #%d\n", size & 0xFFFFFFFE );
-          print(" ld.uw r3, .imm(%s) \n",ireg[src]->x.name);
-          print(" st.w  r3, .imm(%s) \n",ireg[dst]->x.name);
+          print(" ld.uw r12, .imm(%s) \n",ireg[src]->x.name);
+          print(" st.w  r12, .imm(%s) \n",ireg[dst]->x.name);
         }
 
         //
@@ -1660,8 +1655,8 @@ static void emit2(Node p)
         if ( size & 0x01 )
         {
           print(" imm #%d\n",size);
-          print(" ld.ub r3, .imm(%s) \n",ireg[src]->x.name);
-          print(" st.b  r3, .imm(%s) \n",ireg[dst]->x.name);
+          print(" ld.ub r12, .imm(%s) \n",ireg[src]->x.name);
+          print(" st.b  r12, .imm(%s) \n",ireg[dst]->x.name);
         }
 
       }
@@ -1897,6 +1892,8 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // stack offset
   //
+  print("; create stack frame\n");
+
   if ( alu_const(framesize,0) == 0 )
   {
     print(" sub sp,#%d\n", framesize);
@@ -2021,11 +2018,13 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
     print(";; FIXME: when supported, restore saved return address from software stack for non-leaf routines\n");
     print(";; ld.q rs, %d(sp)\n", framesize-4 );
     print(";;\n");
+    print("\n");
   }
 
   //
   // clean up stack frame
   //
+  print("; clean up stack frame\n");
   if ( alu_const(framesize,0) == 0 )
   {
     print(" add sp,#%d\n", framesize);
@@ -2055,8 +2054,6 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
   print(" .imm_table\n");
   print("\n");
-
-
 
 }
 
