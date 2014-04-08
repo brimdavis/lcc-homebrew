@@ -18,7 +18,7 @@
 //
 //---------------------------------------------------------------
 //
-// <yard.md> copyright (c) 2012,2013 Brian Davis
+// <yard.md> copyright (c) 2012-2014 Brian Davis
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -663,20 +663,13 @@ stmt : LABELV           "\n%a:\n"
 !
 ! stack modes
 !
-! TODO: catch stack offset > 60 and build with .imm sequence like aimm
-!
-! FIXME: ADDRFP4 & ADDRLP4 stack modes don't work for byte/wyde accesses:
-!          - define as "stk_addr" and use for quad load/store
-!          - define alternate imm + load|store pattern for byte/wyde ADDRFP4 | ADDRLP4
-
-!
-! FIXME: does ADDRFP also need a -8 if using sp ???
-!
-stk_addr : ADDRFP4          "%a+%F-8(sp)"        
-stk_offs : ADDRFP4          "%a+%F-8"        
+! TESTME: ADDRFP4 & ADDRLP4 stack modes don't work for byte/wyde accesses:
+!          - defined "stk_addr"  for quad load/store
+!          - alternate stk_offs uses imm + load|store pattern for byte/wyde ADDRFP4 | ADDRLP4
 
 !
 ! ADDRLP4 needs a "-8" to account for SIZE_PC_FP_SAVE ( offset from top of stack frame to end of locals )
+! This is where the FP would point if using FP offsets.
 !
 ! note: ARM target avoided an offset by changing framesize just before the emitcode() call, 
 !       such that sp+framesize' pointed just above the locals within the stack frame- not sure 
@@ -684,6 +677,13 @@ stk_offs : ADDRFP4          "%a+%F-8"
 !
 stk_addr : ADDRLP4          "%a+%F-8(sp)"        
 stk_offs : ADDRLP4          "%a+%F-8"        
+
+!
+! ADDRFP also needs a -8 when using 'virtual' FP offsets
+!
+stk_addr : ADDRFP4          "%a+%F-8(sp)"        
+stk_offs : ADDRFP4          "%a+%F-8"        
+
 
 
 !
@@ -701,7 +701,7 @@ acon  : c32              "%0"
 !!
 !! old addressing patterns
 !!   - shared pattern resulted in other imm operations between aimm offset load and use
-!!   - combined with load/store patterns to force monolithic imm+memory_access sequence
+!!   - combined these with load/store patterns instead to force monolithic imm+memory_access sequence
 !!
 !!!
 !!! offset indirect 
@@ -955,6 +955,9 @@ reg  : LOADF8(reg)    " mips_mov.d f%c,f%0\n"      move(a)
 ccz  : CNSTI4         ""                           range(a,0,0)
 ccz  : CNSTU4         ""                           range(a,0,0)
 
+!
+! FIXME: add compiler flag for bra/lbra within function
+!
 stmt : EQU4(reg,ccz)  " when.z   %0\n bra %a\n"    1
 stmt : NEU4(reg,ccz)  " when.nz  %0\n bra %a\n"    1
 stmt : GTU4(reg,ccz)  " when.nz  %0\n bra %a\n"    1
@@ -968,6 +971,10 @@ stmt : LTI4(reg,ccz)  " when.mi  %0\n bra %a\n"    1
 
 !
 ! reg-reg comparisons
+!
+
+!
+! FIXME: add compiler flag for bra/lbra within function
 !
 stmt : EQI4(reg,reg)  " when.eq %0,%1\n bra %a\n"  2
 stmt : EQU4(reg,reg)  " when.eq %0,%1\n bra %a\n"  2
@@ -997,6 +1004,9 @@ stmt : LTU4(reg,reg)  " when.lo %0,%1\n bra %a\n"  2
 cp2  : CNSTI4         "%a"         cost_pow2(a)
 cp2  : CNSTU4         "%a"         cost_pow2(a)
 
+!
+! FIXME: add compiler flag for bra/lbra within function
+!
 stmt : EQI4(BANDI4(reg,cp2),ccz)   "# skip.bs %0,#bitnum(%1)\n bra %a\n"
 stmt : EQU4(BANDU4(reg,cp2),ccz)   "# skip.bs %0,#bitnum(%1)\n bra %a\n"
 
@@ -1006,6 +1016,10 @@ stmt : NEU4(BANDU4(reg,cp2),ccz)   "# skip.bc %0,#bitnum(%1)\n bra %a\n"
 
 !
 ! TODO: floating point conditionals
+!
+
+!
+! FIXME: add compiler flag for bra/lbra within function
 !
 stmt: EQF4(reg,reg)  " when.fp.eq %0, %1\n bra %a\n"   2
 stmt: EQF8(reg,reg)  " when.fp.eq %0, %1\n bra %a\n"   2
@@ -1046,22 +1060,17 @@ baddr  : ADDRGP4       "%a"
 baddr  : c32           "%0"
 
 !
-! FIXME : change to lbra once assembler supports it
+! FIXME: add compiler flag for bra/lbra within function
 !
 stmt : JUMPV(baddr)  " bra %0\n"    1
-
 stmt : JUMPV(reg)    " jmp  (%0)\n"  1
 
-
-!
-! FIXME : change to lbsr once assembler supports it
-!
-stmt : CALLV(baddr)    " bsr %0\n"     1
-reg  : CALLI4(baddr)   " bsr %0\n"     1
-reg  : CALLP4(baddr)   " bsr %0\n"     1
-reg  : CALLU4(baddr)   " bsr %0\n"     1
-reg  : CALLF4(baddr)   " bsr %0\n"     1
-reg  : CALLF8(baddr)   " bsr %0\n"     1
+stmt : CALLV(baddr)    " lbsr %0\n"     1
+reg  : CALLI4(baddr)   " lbsr %0\n"     1
+reg  : CALLP4(baddr)   " lbsr %0\n"     1
+reg  : CALLU4(baddr)   " lbsr %0\n"     1
+reg  : CALLF4(baddr)   " lbsr %0\n"     1
+reg  : CALLF8(baddr)   " lbsr %0\n"     1
 
 stmt : CALLV(reg)      " jsr (%0)\n"   1
 reg  : CALLI4(reg)     " jsr (%0)\n"   1
@@ -1116,31 +1125,6 @@ static void write_header( void )
 }
 
 //
-// write rudimentary cstart stub
-//
-static void write_cstart( void )
-{
-  print
-  (
-    ";\n"
-    "; simple absolute cstart code for tiny embedded startup\n"
-    ";\n"
-    " org $100\n"
-    "cstart_1:\n"
-    " mov sp,#$1000\n"
-    " bsr main\n"
-    "\n"
-    ";; rts\n"
-    "\n"
-    "; jump to reset vector \n"
-    " mov r0,#0\n"
-    " jmp (r0)\n"
-    "\n"
-  );
-}
-
-
-//
 //
 //
 static void progbeg(int argc, char *argv[]) 
@@ -1152,7 +1136,6 @@ static void progbeg(int argc, char *argv[])
   parseflags(argc, argv);
 
   write_header();
-  write_cstart();
 
   ///
   /// old MIPS code: global register
@@ -1307,8 +1290,11 @@ static void target(Node p)
     case DIV+I: case DIV+U: 
     case MOD+I: case MOD+U:
       setreg(p, ireg[0]);
-      rtarget(p, 1, ireg[0]);
-      rtarget(p, 0, ireg[1]);
+
+      // FIXME: swapped 0,1 in second args- attempt to fix operand call arg order for div,mod
+      rtarget(p, 0, ireg[0]);    
+      rtarget(p, 1, ireg[1]);
+
       break;
  
     ///
@@ -1513,8 +1499,9 @@ static void emit2(Node p)
       src = getregnum( p->x.kids[0] );
       n   = p->kids[0]->kids[1]->syms[0]->u.c.v.u;
 
-      print(" skip.bs %s,#%d\n bra L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
-//.L    print(" skip.bs %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+      //.L
+      //print(" skip.bs %s,#%d\n bra L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+      print(" skip.bs %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
                                                                                      
       break;
 
@@ -1525,8 +1512,9 @@ static void emit2(Node p)
       src = getregnum( p->x.kids[0] );
       n   = p->kids[0]->kids[1]->syms[0]->u.c.v.u;
 
-      print(" skip.bc %s,#%d\n bra L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
-//.L  print(" skip.bc %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+      //.L
+      //print(" skip.bc %s,#%d\n bra L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
+      print(" skip.bc %s,#%d\n bra .L%s\n", ireg[src]->x.name, find_single_bit_set(n), p->syms[0]->name );
 
       break;
 
@@ -1603,7 +1591,7 @@ static void emit2(Node p)
         //
         if ( size & 0x01 )
         {
-          print(" imm #%d\n",size);
+          print(" imm #%d\n", size-1);
           print(" ld.ub r12, .imm(%s) \n",ireg[src]->x.name);
           print(" st.b  r12, .imm(%s) \n",ireg[dst]->x.name);
         }
@@ -1644,7 +1632,7 @@ static void emit2(Node p)
         //
         if ( size & 0x02 )
         {
-          print(" imm #%d\n", size & 0xFFFFFFFE );
+          print(" imm #%d\n", (size & 0xFFFFFFFE) - 2 );
           print(" ld.uw r12, .imm(%s) \n",ireg[src]->x.name);
           print(" st.w  r12, .imm(%s) \n",ireg[dst]->x.name);
         }
@@ -1654,7 +1642,7 @@ static void emit2(Node p)
         //
         if ( size & 0x01 )
         {
-          print(" imm #%d\n",size);
+          print(" imm #%d\n", size-1);
           print(" ld.ub r12, .imm(%s) \n",ireg[src]->x.name);
           print(" st.b  r12, .imm(%s) \n",ireg[dst]->x.name);
         }
@@ -1729,6 +1717,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   int i, j;
   int varargs;
   int sizeisave, sizefsave;
+
   int dumpmask = 0;
   int reg      = 0;
 
@@ -1741,12 +1730,28 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   varargs = variadic(f->type) || ( i > 0 ) && ( strcmp(callee[i-1]->name,"__builtin_va_alist") == 0 );
 
   //
-  // initialize masks and stack offsets
+  // FIXME: initialize masks and stack offsets
   //
   usedmask[IREG] = usedmask[FREG] = 0;
+
   freemask[IREG] = freemask[FREG] = ~(unsigned)0;
 
-  offset = maxoffset = maxargoffset = 0;
+  // FIXME: mask experiments
+  //  freemask[IREG] = INTVAR | INTTMP;
+  //  freemask[FREG] = FLTVAR | FLTTMP;
+
+  //
+  // starting offset for incoming args
+  //
+  // this is the offset to incoming args from the hypothetical frame pointer
+  //
+  // ADDRFP/ADDRLB currently adjust by FRAME_SIZE - SIZE_FP_SAVE 
+  // to compute actual offset from the current stack pointer 
+  //
+  offset = SIZE_PC_FP_SAVE;
+
+  print(";\n");
+  print("; arg loop:\n");
 
   //
   // loop through arguments
@@ -1757,10 +1762,14 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   {
     Symbol p = callee[i];
     Symbol q = caller[i];
+    Symbol r;
+
     int size = roundup(q->type->size, 4);
 
     assert(q);
 
+    //
+    // args go in memory for floats and for args > # arg registers
     //
     // FIXME: floating point arguments
     //
@@ -1773,19 +1782,24 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
       dumpmask |= 0xffff>>(15 - reg);
 
       if (p->type->size == 8)
-        dumpmask |= 1<<(reg + 1);
+        dumpmask |= 1 << (reg + 1);
+
+      if ( reg < ARG_NUM_REGS ) print(";  [A] dumpmask r%d\n");
+
     }
 
     //
     // args required in memory for address reference, varargs, and structures
     //
-    else if (p->addressed || varargs || isstruct(p->type)) 
+    else if ( p->addressed || varargs || isstruct(p->type) ) 
     {
       p->x.offset = offset;
       p->x.name   = stringd(offset);
       p->sclass   = q->sclass = AUTO;
 
       dumpmask |= 0xffff>>(16 - reg - size / 4);
+
+      if ( reg < ARG_NUM_REGS ) print(";  [B] dumpmask r%d\n", reg);
 
     } 
 
@@ -1797,8 +1811,36 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
       q->type   = p->type;
       p->sclass = q->sclass = REGISTER;
 
-      if (askregvar(p, rmap(ttob(p->type))))
+
+      //
+      // see if register arg can stay where it arrived
+      //
+      if ( ncalls == 0 ) 
+      {
+        //
+        // FIXME: stay-put arg code adopted from MIPS
+        //
+        p->x.offset = q->x.offset = offset;
+        p->x.name   = q->x.name   = stringd(offset);
+
+        r = ireg[reg];
+
+        askregvar(p, r);
+        assert(p->x.regnode && p->x.regnode->vbl == p);
+
+        q->x = p->x;
+
+        if ( reg < ARG_NUM_REGS ) print(";  [C] stay put r%d\n", reg );
+
+      }
+
+      else if (askregvar(p, rmap(ttob(p->type))))
+      {
         q->x.name = ireg[reg]->x.name;
+
+        if ( reg < ARG_NUM_REGS ) print(";  [D] register r%d\n", reg);
+      }
+
       else 
       {
         p->sclass   = q->sclass = AUTO;
@@ -1806,6 +1848,8 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
         p->x.name   = stringd(offset);
 
         dumpmask |= 0xffff>>(15 - reg);
+
+        if ( reg < ARG_NUM_REGS ) print(";  [E] dumpmask r%d\n", reg);
       }
     }
 
@@ -1813,10 +1857,16 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
     reg += size / 4;
   }
 
+
   //
   // remove non-argument registers from dumpmask
   //
   dumpmask &= 0xf;
+
+  print(";\n");
+  print("; final dumpmask=0x%x\n", dumpmask );
+  print(";\n");
+
 
   //
   // ??? check for arg list mismatch ???
@@ -1824,17 +1874,23 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   assert(!caller[i]);
 
   //
+  // generate code
   //
-  //
-  offset = 0;
+  offset = maxoffset = maxargoffset = 0;
   gencode(caller, callee);
 
   //
   // compute stack space required
   //
+  maxoffset    = roundup(maxoffset, 4);
   maxargoffset = roundup(maxargoffset, 4);
-  sizefsave    = 8 * bitcount(usedmask[FREG] & 0xf0);
+  sizefsave    = 8 * bitcount(usedmask[FREG] & FLTVAR);
   sizeisave    = 4 * bitcount(usedmask[IREG] & INTVAR);
+
+  //
+  // FIXME: minimum arg size needed for variadic arg save code
+  //
+  if (ncalls && maxargoffset < 16) maxargoffset = 16;
 
   //
   // total frame size, with room for FP + return address
@@ -1842,37 +1898,41 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   framesize = roundup( SIZE_PC_FP_SAVE + sizefsave + sizeisave + maxargoffset + maxoffset, 4);
 
   print(";\n");
-  print("; usedmask[IREG]=%x, usedmask[FREG]=%x\n", usedmask[IREG], usedmask[FREG] );
+  print("; usedmask[IREG]=0x%x, usedmask[FREG]=0x%x\n", usedmask[IREG], usedmask[FREG] );
   print("; framesize = %d, sizeisave = %d, sizefsave = %d, maxargoffset = %d, maxoffset = %d\n", framesize, sizeisave, sizefsave, maxargoffset, maxoffset);
   print(";\n");
 
   // 
-  // Stack frame: intended layout, generated code doesn't quite match yet...
+  // Stack frame: intended layout
+  // 
+  // FIXME: !!! current code generator doesn't always match this due to bugs/incomplete implementation !!!
   // 
   // 
   // $FFFF_FFFF
   // 
-  //           +  arg # N-1        +
-  //           +  ...              +
-  //           +  arg # 1          +
-  //           +  arg # 0          +    caller's frame  ( space always reserved for arg 0..3 )
+  //           [  arg # N-1        ]
+  //           [  ...              ]
+  //           [  arg # 3          ]    caller's frame  
+  //           [  arg # 2          ]    
+  //           [  arg # 1          ]    space always reserved for arg 0..3 to allow varadic callee register spill
+  //           [  arg # 0          ]    
   //
   //           ---------------------
   //
-  //           +  return address   +    ( always allocated but not used in leaf functions )
+  //           [  return address   ]    ( always allocated but not used in leaf functions )
   //
-  //  fp ->    +  saved fp         +    ( space allocated, fp not currently used )
+  //  fp ->    [  saved fp         ]    ( space allocated, fp not currently used )
   //
   //           +  locals           +  
-  //           +  ...              +    maxoffset
+  //           |  ...              |    maxoffset
   //           +  locals           +  
   //
-  //           +  reg spill        +    sizeisave
-  //           +  ...              +       +
-  //           +  reg spill        +    sizefsave
+  //           +  reg spill        +    
+  //           |  ...              |    sizeisave + sizefsave
+  //           +  reg spill        +    
   //
   //           +  outgoing args    +    
-  //           +  ...              +    maxargoffset
+  //           |  ...              |    maxargoffset
   //  sp ->    +  outgoing args    +    
   //
   //           ---------------------
@@ -1882,11 +1942,9 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   
   segment(CODE);
-  
 
-  print(" .align 2\n");
-  print("\n%s:\n", f->x.name);
-
+  print(" .align 2\n\n");
+  print("%s:\n", f->x.name);
   print("\n");
 
   //
@@ -1922,11 +1980,16 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // dumpmask arg registers are copied to stack frame
   //
+  // FIXME: need to enforce minimum arg area size (elsewhere) for varadic save to work!
+  //
   print("; dumpmask arg copy \n");
 
   for ( i = 0; i < ARG_NUM_REGS; i++)
   {
-    if ( dumpmask & (1<<i) )
+    //
+    // note varargs test is needed here: dumpmask will not be set for varadic portion of args
+    //
+    if ( ( dumpmask & (1<<i) ) || varargs )   
     {
       print(" st.q %s, %d(sp)\n", ireg[i]->x.name, framesize + 4 * i );
     }
@@ -1934,12 +1997,12 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
 
   print("\n");
 
-
   //
-  // save caller-saved registers
+  // save callee-saved registers
   //
-  print("; caller-saved registers\n");
+  print("; callee-saved registers\n");
 
+ 
   for ( j = i = 0; i <= LAST_SAVED_REG; i++)
   {
     if ( (usedmask[IREG] & INTVAR) & (1<<i) )
@@ -1952,29 +2015,29 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // TODO: replace old arm floating point save code
   //
-  //        for (i = 7; i >= 4; i--)
-  //                if (usedmask[FREG] & (1<<i))
-  //                        print("\tstfe\t%s, [sp, #-12]!\n", freg[i]->x.name);
+  //  for (i = 7; i >= 4; i--)
+  //    if (usedmask[FREG] & (1<<i))
+  //      print("\tstfe\t%s, [sp, #-12]!\n", freg[i]->x.name);
+  //
 
   print("\n");
 
-
   //
-  // copy register args to register variables 
+  // copy register args to register variables ( unless staying put in same arg register )
   //
   print("; copy reg args\n");
 
   for (i = 0; ( i < ARG_NUM_REGS ) && callee[i]; i++)
   {
-    if ( caller[i]->sclass == REGISTER &&
-         callee[i]->sclass == REGISTER &&
-         caller[i]->type   == callee[i]->type
+    if (    caller[i]->sclass == REGISTER
+         && callee[i]->sclass == REGISTER
+         && caller[i]->type   == callee[i]->type
+         && ( strcmp( caller[i]->x.name, callee[i]->x.name ) != 0 )
        )
        print(" mov %s, %s\n", callee[i]->x.name, caller[i]->x.name);
   }
 
   print("\n");
-
 
   //
   // 
@@ -1984,18 +2047,21 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
 
   //
-  // Restore caller saved registers 
+  // Restore callee saved registers 
   //
-  print("; restore caller-saved registers\n");
+  print("; restore callee-saved registers\n");
 
   //
   // TODO: replace old arm floating point restore code
   //
-  //        for (i = 4; i <= 7; i++)
-  //                if (usedmask[FREG] & (1<<i))
-  //                        print("\tldfe\t%s, [fp, #-%d]\n", freg[i]->x.name,
-  //                                sizeisave - 4 * bitcount(dumpmask) +
-  //                                (8 - i) * 12 - 4);
+  //  for (i = 4; i <= 7; i++)
+  //    if (usedmask[FREG] & (1<<i))
+  //      print
+  //      (
+  //        "\tldfe\t%s, [fp, #-%d]\n", 
+  //        freg[i]->x.name,
+  //        sizeisave - 4 * bitcount(dumpmask) + (8 - i) * 12 - 4
+  //      );
 
   for ( j = i = 0; i <= LAST_SAVED_REG; i++)
   {
@@ -2005,7 +2071,6 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
       j++;
     }
   }
-
 
   print("\n");
 
@@ -2154,27 +2219,53 @@ static void export(Symbol p)
 
 
 //
-//
+// FIXME: commented out extern until stubbed or implemented in assembler/linker
 //
 static void import(Symbol p) 
 {
   if (!isfunc(p->type))
-    print(" .extern %s %d\n", p->name, p->type->size);
+    print(";; .extern %s %d\n", p->name, p->type->size);
 }
 
 
 //
-//
+// FIXME: label experiments in defsymbol
 //
 static void defsymbol(Symbol p) 
 {
-  if (p->scope >= LOCAL && p->sclass == STATIC)
-    p->x.name = stringf( "L%d", genlabel(1));
-//    p->x.name = stringf( ".L%d", genlabel(1));
+  if ( p->scope >= LOCAL && p->sclass == STATIC )
+  {
+    //.L
+    //p->x.name = stringf( "L%d", genlabel(1));
+    p->x.name = stringf( ".L%d", genlabel(1));
+  }
 
-  else if (p->generated)
-    p->x.name = stringf( "L%s", p->name);
-//    p->x.name = stringf( ".L%s", p->name);
+  else if ( p->generated )
+  {
+    //.L
+    //p->x.name = stringf( "L%s", p->name);
+    p->x.name = stringf( ".L%s", p->name);
+  }
+
+//  //
+//  // FIXME: ??? name convention, prepend globals with _ ???
+//  //
+//  else if ( p->scope == GLOBAL && p->sclass == EXTERN )
+//  {
+//    p->x.name = stringf( "_%s", p->name);
+//  }
+
+  //
+  // fixup hex constants to use leading $ in generated code
+  //
+  else if (    p->scope == CONSTANTS
+            && ( isint(p->type) || isptr(p->type) ) 
+            && p->name[0] == '0' 
+            && p->name[1] == 'x'
+          )
+  {
+    p->x.name = stringf("$%s", &p->name[2]);
+  }
 
   else
   {
@@ -2187,14 +2278,21 @@ static void defsymbol(Symbol p)
 //
 //
 //
-static void address(Symbol q, Symbol p, long n) {
-        q->x.offset = p->x.offset + n;
-        if (p->scope == GLOBAL
-        || p->sclass == STATIC || p->sclass == EXTERN)
-                q->x.name = stringf("%s%s%d", p->x.name,
-                        n >= 0 ? "+" : "", n);
-        else
-                q->x.name = stringf("%d", q->x.offset);
+static void address(Symbol q, Symbol p, long n) 
+{
+  q->x.offset = p->x.offset + n;
+
+  if (     p->scope  == GLOBAL
+        || p->sclass == STATIC 
+        || p->sclass == EXTERN
+     )
+  { 
+    q->x.name = stringf("%s%s%d", p->x.name, n >= 0 ? "+" : "", n );
+  }
+  else
+  {
+    q->x.name = stringf("%d", q->x.offset);
+  }
 }
 
 
