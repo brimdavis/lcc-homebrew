@@ -3,9 +3,10 @@
 //
 // <yard.md>
 //
-// experimental lcc target description for YARD-1 processor
+// experimental lcc target description for YARD-1 processor:
 //
-// unfinished, buggy, and not working yet
+//  - unfinished, buggy, and not working yet
+//  - no floating point support
 //
 
 //
@@ -450,27 +451,9 @@ reg  : BXORU4(reg,BCOMU4(cg5))   "? mov %c,%0\n xor.not %c,#%1\n"    0
 !
 
 !
-! FIXME: is anything besides CNSTI4 actually needed here?
-!
-sc5  : CNSTI1            " #%a"  range(a,0,31)
-sc5  : CNSTU1            " #%a"  range(a,0,31)
-sc5  : CNSTI2            " #%a"  range(a,0,31)
-sc5  : CNSTU2            " #%a"  range(a,0,31)
-sc5  : CNSTI4            " #%a"  range(a,0,31)
-sc5  : CNSTU4            " #%a"  range(a,0,31)
-
-!                        
-! not used - full shifts needed in hardware                       
-!                        
-!reg  : LSHI4(reg,sc5)    "@ mov %c,%0\n lsl %c,%1\n"  1 
-!reg  : LSHU4(reg,sc5)    "@ mov %c,%0\n lsl %c,%1\n"  1 
-!reg  : RSHI4(reg,sc5)    "@ mov %c,%0\n asr %c,%1\n"  1 
-!reg  : RSHU4(reg,sc5)    "@ mov %c,%0\n lsr %c,%1\n"  1 
-
-
-!
-! FIXME: hack to support constant shifts of 1 & 2 bits with one-bit hardware
-! updated for new two-bit LSL hardware support in core
+! FIXME: hack to support constant shifts of 1,2,3, and 4 bits
+! in-line code also supported for left shifts of 8 bits 
+! updated for new one-bit and two-bit LSL hardware support in core
 !
 sc1  : CNSTI1            " #%a"  range(a,1,1)
 sc1  : CNSTU1            " #%a"  range(a,1,1)
@@ -486,32 +469,83 @@ sc2  : CNSTU2            " #%a"  range(a,2,2)
 sc2  : CNSTI4            " #%a"  range(a,2,2)
 sc2  : CNSTU4            " #%a"  range(a,2,2)
 
-reg  : LSHI4(reg,sc1)    "@ mov %c,%0\n lsl %c,#1\n"              1
-reg  : LSHU4(reg,sc1)    "@ mov %c,%0\n lsl %c,#1\n"              1
-reg  : RSHI4(reg,sc1)    "@ mov %c,%0\n asr %c,#1\n"              1
-reg  : RSHU4(reg,sc1)    "@ mov %c,%0\n lsr %c,#1\n"              1
+sc3  : CNSTI1            " #%a"  range(a,3,3)
+sc3  : CNSTU1            " #%a"  range(a,3,3)
+sc3  : CNSTI2            " #%a"  range(a,3,3)
+sc3  : CNSTU2            " #%a"  range(a,3,3)
+sc3  : CNSTI4            " #%a"  range(a,3,3)
+sc3  : CNSTU4            " #%a"  range(a,3,3)
 
-reg  : LSHI4(reg,sc2)    "@ mov %c,%0\n lsl %c,#2\n"              2
-reg  : LSHU4(reg,sc2)    "@ mov %c,%0\n lsl %c,#2\n"              2
-reg  : RSHI4(reg,sc2)    "@ mov %c,%0\n asr %c,#1\n asr %c,#1\n"  2
-reg  : RSHU4(reg,sc2)    "@ mov %c,%0\n lsr %c,#1\n lsr %c,#1\n"  2
+sc4  : CNSTI1            " #%a"  range(a,4,4)
+sc4  : CNSTU1            " #%a"  range(a,4,4)
+sc4  : CNSTI2            " #%a"  range(a,4,4)
+sc4  : CNSTU2            " #%a"  range(a,4,4)
+sc4  : CNSTI4            " #%a"  range(a,4,4)
+sc4  : CNSTU4            " #%a"  range(a,4,4)
+                                                                                
+sc8  : CNSTI1            " #%a"  range(a,8,8)
+sc8  : CNSTU1            " #%a"  range(a,8,8)
+sc8  : CNSTI2            " #%a"  range(a,8,8)
+sc8  : CNSTU2            " #%a"  range(a,8,8)
+sc8  : CNSTI4            " #%a"  range(a,8,8)
+sc8  : CNSTU4            " #%a"  range(a,8,8)
+                                                                                
+reg  : LSHI4(reg,sc1)    "@ mov %c,%0\n lsl %c,#1\n"                                      1
+reg  : LSHU4(reg,sc1)    "@ mov %c,%0\n lsl %c,#1\n"                                      1
+reg  : RSHI4(reg,sc1)    "@ mov %c,%0\n asr %c,#1\n"                                      1
+reg  : RSHU4(reg,sc1)    "@ mov %c,%0\n lsr %c,#1\n"                                      1
+                                                                                
+reg  : LSHI4(reg,sc2)    "@ mov %c,%0\n lsl %c,#2\n"                                      2
+reg  : LSHU4(reg,sc2)    "@ mov %c,%0\n lsl %c,#2\n"                                      2
+reg  : RSHI4(reg,sc2)    "@ mov %c,%0\n asr %c,#1\n asr %c,#1\n"                          2
+reg  : RSHU4(reg,sc2)    "@ mov %c,%0\n lsr %c,#1\n lsr %c,#1\n"                          2
+
+reg  : LSHI4(reg,sc3)    "@ mov %c,%0\n lsl %c,#1\n lsl %c,#2\n"                          2
+reg  : LSHU4(reg,sc3)    "@ mov %c,%0\n lsl %c,#1\n lsl %c,#2\n"                          2
+reg  : RSHI4(reg,sc3)    "@ mov %c,%0\n asr %c,#1\n asr %c,#1\n asr %c,#1\n"              2
+reg  : RSHU4(reg,sc3)    "@ mov %c,%0\n lsr %c,#1\n lsr %c,#1\n lsr %c,#1\n"              2
+
+reg  : LSHI4(reg,sc4)    "@ mov %c,%0\n lsl %c,#2\n lsl %c,#2\n"                          2
+reg  : LSHU4(reg,sc4)    "@ mov %c,%0\n lsl %c,#2\n lsl %c,#2\n"                          2
+reg  : RSHI4(reg,sc4)    "@ mov %c,%0\n asr %c,#1\n asr %c,#1\n asr %c,#1\n asr %c,#1\n"  2
+reg  : RSHU4(reg,sc4)    "@ mov %c,%0\n lsr %c,#1\n lsr %c,#1\n lsr %c,#1\n lsr %c,#1\n"  2
+
+reg  : LSHI4(reg,sc8)    "@ mov %c,%0\n lsl %c,#2\n lsl %c,#2\n lsl %c,#2\n lsl %c,#2\n"  2
+reg  : LSHU4(reg,sc8)    "@ mov %c,%0\n lsl %c,#2\n lsl %c,#2\n lsl %c,#2\n lsl %c,#2\n"  2
+
 
 !
-! catch any remaining shifts & print error in emit2
+! FIXME: catch any remaining shifts in emit2
 !
+scc  : CNSTI1            " #%a"  range(a,0,31)
+scc  : CNSTU1            " #%a"  range(a,0,31)
+scc  : CNSTI2            " #%a"  range(a,0,31)
+scc  : CNSTU2            " #%a"  range(a,0,31)
+scc  : CNSTI4            " #%a"  range(a,0,31)
+scc  : CNSTU4            " #%a"  range(a,0,31)
 
-! unsupported constant shifts
-reg  : LSHI4(reg,sc5)    "#\n"  4
-reg  : LSHU4(reg,sc5)    "#\n"  4
-reg  : RSHI4(reg,sc5)    "#\n"  4
-reg  : RSHU4(reg,sc5)    "#\n"  4
+! constant shifts
+reg  : LSHI4(reg,scc)    "#\n"  4
+reg  : LSHU4(reg,scc)    "#\n"  4
+reg  : RSHI4(reg,scc)    "#\n"  4
+reg  : RSHU4(reg,scc)    "#\n"  4
                         
-! unsupported variable shifts
+! variable shifts
 reg  : LSHI4(reg,reg)    "#\n"  4
 reg  : LSHU4(reg,reg)    "#\n"  4
 reg  : RSHI4(reg,reg)    "#\n"  4
 reg  : RSHU4(reg,reg)    "#\n"  4
-                        
+
+
+!!                        
+!! not used - full shifts needed in hardware                       
+!!                        
+!!reg  : LSHI4(reg,scc)    "@ mov %c,%0\n lsl %c,%1\n"  1 
+!!reg  : LSHU4(reg,scc)    "@ mov %c,%0\n lsl %c,%1\n"  1 
+!!reg  : RSHI4(reg,scc)    "@ mov %c,%0\n asr %c,%1\n"  1 
+!!reg  : RSHU4(reg,scc)    "@ mov %c,%0\n lsr %c,%1\n"  1 
+!!
+
                         
 !
 ! arithmetic ops
@@ -970,12 +1004,13 @@ stmt : LEI4(reg,ccz)  " when.lez %0\n bra %a\n"    1
 stmt : LTI4(reg,ccz)  " when.mi  %0\n bra %a\n"    1 
 
 !
-! reg-reg comparisons
+! reg-reg & reg-const comparisons
 !
 
 !
 ! FIXME: add compiler flag for bra/lbra within function
 !
+
 stmt : EQI4(reg,reg)  " when.eq %0,%1\n bra %a\n"  2
 stmt : EQU4(reg,reg)  " when.eq %0,%1\n bra %a\n"  2
 
@@ -993,6 +1028,27 @@ stmt : LEU4(reg,reg)  " when.ls %0,%1\n bra %a\n"  2
 
 stmt : LTI4(reg,reg)  " when.lt %0,%1\n bra %a\n"  2 
 stmt : LTU4(reg,reg)  " when.lo %0,%1\n bra %a\n"  2
+
+!
+
+stmt : EQI4(reg,c32)  " imm #%1\n when.eq %0,imm\n bra %a\n"  1
+stmt : EQU4(reg,c32)  " imm #%1\n when.eq %0,imm\n bra %a\n"  1
+
+stmt : NEI4(reg,c32)  " imm #%1\n when.ne %0,imm\n bra %a\n"  1
+stmt : NEU4(reg,c32)  " imm #%1\n when.ne %0,imm\n bra %a\n"  1
+
+stmt : GEI4(reg,c32)  " imm #%1\n when.ge %0,imm\n bra %a\n"  1
+stmt : GEU4(reg,c32)  " imm #%1\n when.hs %0,imm\n bra %a\n"  1
+
+stmt : GTI4(reg,c32)  " imm #%1\n when.gt %0,imm\n bra %a\n"  1 
+stmt : GTU4(reg,c32)  " imm #%1\n when.hi %0,imm\n bra %a\n"  1
+
+stmt : LEI4(reg,c32)  " imm #%1\n when.le %0,imm\n bra %a\n"  1
+stmt : LEU4(reg,c32)  " imm #%1\n when.ls %0,imm\n bra %a\n"  1
+
+stmt : LTI4(reg,c32)  " imm #%1\n when.lt %0,imm\n bra %a\n"  1 
+stmt : LTU4(reg,c32)  " imm #%1\n when.lo %0,imm\n bra %a\n"  1
+
 
 
 !
@@ -1389,7 +1445,9 @@ static void emit2(Node p)
   int align, offset;
   int n;
 
-  switch (specific(p->op)) 
+  int op = specific(p->op);
+
+  switch (op) 
   {
     case ARG+I: 
     case ARG+U: 
@@ -1424,10 +1482,130 @@ static void emit2(Node p)
 
 
     //
-    // unsupported shifts
+    // FIXME: large constant and variable shifts
     //
     case LSH+I: case LSH+U: case RSH+I: case RSH+U:
-      print( "\n .error \"Multi-bit (>2) and variable shifts not supported yet\"\n" );
+
+      print( ";; emit2: multi-bit or variable shift\n" );
+
+      dst  = getregnum( p );
+      src0 = getregnum( p->x.kids[0] );
+
+      src1 = -1;
+      size = -1;
+
+      /////////////////////////////////////////////////////////////////////////
+      //
+      // first get the shift count (constant or register) into imm for the loop
+      //
+
+      //
+      // check for constant
+      //
+      if ( (generic(p->kids[1]->op) == CNST ) )
+      {
+        if ( (specific(p->kids[1]->op) == CNST+I ) )
+        {
+          print(";; shift CNST+I\n");
+          size = p->kids[1]->syms[0]->u.c.v.i;
+          print(" mov imm,#%d\n",size);
+        }
+  
+        else if ( (specific(p->kids[1]->op) == CNST+U ) )
+        {
+          print(";; shift CNST+U\n");
+          size = p->kids[1]->syms[0]->u.c.v.u;
+          print(" mov imm,#%d\n",size);
+        }
+
+        else
+        {
+          print(" .error \"emit2: unexpected CNST type\"\n" );
+        }
+      }
+
+      //
+      // check for constant subexpression
+      //
+      else if (     generic( p->kids[1]->op )                    == INDIR
+                && specific( p->kids[1]->kids[0]->op)            == VREG+P
+                &&           p->kids[1]->syms[RX]->u.t.cse
+                &&  generic( p->kids[1]->syms[RX]->u.t.cse->op ) == CNST
+              )
+      {
+
+        if ( (specific(p->kids[1]->syms[RX]->u.t.cse->op) == CNST+I ) )
+        {
+          print(";; shift u.t.cse CNST+I\n");
+          size = p->kids[1]->syms[RX]->u.t.cse->syms[0]->u.c.v.i;
+          print(" mov imm,#%d\n",size);
+        }
+  
+        else if ( (specific(p->kids[1]->syms[RX]->u.t.cse->op) == CNST+U ) )
+        {
+          print(";; shift u.t.cse CNST+U\n");
+          size = p->kids[1]->syms[RX]->u.t.cse->syms[0]->u.c.v.u;
+          print(" mov imm,#%d\n",size);
+        }
+
+        else
+        {
+          print(" .error \"emit2: unexpected u.t.cse CNST type\"\n" );
+        }
+
+      }
+
+      //
+      // if we get here, it must be a register ?
+      // FIXME: add assertion or error check that we've got a register
+      //
+      else 
+      {
+        src1 = getregnum( p->x.kids[1] );
+        print(" mov imm,r%d\n",src1);
+      }
+
+//      else
+//      {
+//        print(" .error \"emit2: unexpected kids[1]->op type == %x \"\n", generic(p->kids[1]->op) );
+//      }
+
+
+      print( ";; shift:  dst= %d  src0= %d  src1= %d  size= %d\n", dst, src0, src1, size );
+
+
+      /////////////////////////////////////////////////////////////////////////
+      //
+      // copy src0 to dst if needed 
+      // no need to check for src1 collision, as src1 has already been copied to imm
+      //
+      if ( dst != src0 )
+      {
+        print(" mov %s,%s\n",  ireg[dst]->x.name, ireg[src0]->x.name );
+      }
+
+      /////////////////////////////////////////////////////////////////////////
+      //
+      // generate shift loop
+      //
+      n = genlabel(1);
+
+      print(".shift_loop_%d:\n",n);
+      print(" sub.snb imm, #1\n");
+      print(" bra .shift_done_%d\n",n);
+      print(" bra.d .shift_loop_%d\n",n);
+
+      if ( (op == LSH+I) || (op == LSH+U) )
+        print(" lsl %s\n",ireg[dst]->x.name);
+
+      else if (op == RSH+U)
+        print(" lsr %s\n",ireg[dst]->x.name);
+
+      else if (op == RSH+I)
+        print(" asr %s\n",ireg[dst]->x.name);
+
+      print(".shift_done_%d\n",n);
+
 
       break;
 
@@ -1888,14 +2066,24 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   sizeisave    = 4 * bitcount(usedmask[IREG] & INTVAR);
 
   //
-  // FIXME: minimum arg size needed for variadic arg save code
+  // before rounding up to minimum framesize, check if we can skip creating stack frame entirely
   //
-  if (ncalls && maxargoffset < 16) maxargoffset = 16;
+  if ( ( ncalls == 0 ) && ( (sizefsave + sizeisave + maxargoffset + maxoffset) == 0 ) )
+  { 
+    framesize = 0;
+  }
+  else
+  {
+    //
+    // FIXME: minimum arg size needed for variadic arg save code
+    //
+    if (ncalls && maxargoffset < 16) maxargoffset = 16;
 
-  //
-  // total frame size, with room for FP + return address
-  //
-  framesize = roundup( SIZE_PC_FP_SAVE + sizefsave + sizeisave + maxargoffset + maxoffset, 4);
+    //
+    // total frame size, with room for FP + return address
+    //
+    framesize = roundup( SIZE_PC_FP_SAVE + sizefsave + sizeisave + maxargoffset + maxoffset, 4);
+  }
 
   print(";\n");
   print("; usedmask[IREG]=0x%x, usedmask[FREG]=0x%x\n", usedmask[IREG], usedmask[FREG] );
@@ -1950,16 +2138,24 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // stack offset
   //
-  print("; create stack frame\n");
-
-  if ( alu_const(framesize,0) == 0 )
+  if ( framesize == 0 )
   {
-    print(" sub sp,#%d\n", framesize);
+    print("; no stack frame needed\n"); 
   }
+
   else
   {
-    print(" imm #%d\n", framesize);
-    print(" sub sp,imm\n");
+    print("; create stack frame\n");
+
+    if ( alu_const(framesize,0) == 0 )
+    {
+      print(" sub sp,#%d\n", framesize);
+    }
+    else
+    {
+      print(" imm #%d\n", framesize);
+      print(" sub sp,imm\n");
+    }
   }
 
   print("\n");
@@ -1967,7 +2163,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // FIXME: pop return address off hardware stack for non-leaf functions
   //
-  if (ncalls)
+  if ( ncalls )
   {
     print(";;\n");
     print(";; FIXME: when supported, pop return address off HW return stack for non-leaf routines\n");
@@ -2087,21 +2283,24 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   }
 
   //
-  // clean up stack frame
+  // clean up stack frame, if there was one
   //
-  print("; clean up stack frame\n");
-  if ( alu_const(framesize,0) == 0 )
+  if ( framesize > 0 )
   {
-    print(" add sp,#%d\n", framesize);
-  }
-  else if ( framesize <= 64 )
-  {
-    print(" lea sp, %d(sp)\n", framesize);
-  }
-  else
-  {
-    print(" imm #%d\n", framesize);
-    print(" add sp,imm\n");
+    print("; clean up stack frame\n");
+    if ( alu_const(framesize,0) == 0 )
+    {
+      print(" add sp,#%d\n", framesize);
+    }
+    else if ( framesize <= 64 )
+    {
+      print(" lea sp, %d(sp)\n", framesize);
+    }
+    else
+    {
+      print(" imm #%d\n", framesize);
+      print(" add sp,imm\n");
+    }
   }
 
   print("\n");
