@@ -1508,14 +1508,14 @@ static void emit2(Node p)
         {
           print(";; shift CNST+I\n");
           size = p->kids[1]->syms[0]->u.c.v.i;
-          print(" mov imm,#%d\n",size);
+          print(" imm #%d\n",size);
         }
   
         else if ( (specific(p->kids[1]->op) == CNST+U ) )
         {
           print(";; shift CNST+U\n");
           size = p->kids[1]->syms[0]->u.c.v.u;
-          print(" mov imm,#%d\n",size);
+          print(" imm #%d\n",size);
         }
 
         else
@@ -1538,14 +1538,14 @@ static void emit2(Node p)
         {
           print(";; shift u.t.cse CNST+I\n");
           size = p->kids[1]->syms[RX]->u.t.cse->syms[0]->u.c.v.i;
-          print(" mov imm,#%d\n",size);
+          print(" imm #%d\n",size);
         }
   
         else if ( (specific(p->kids[1]->syms[RX]->u.t.cse->op) == CNST+U ) )
         {
           print(";; shift u.t.cse CNST+U\n");
           size = p->kids[1]->syms[RX]->u.t.cse->syms[0]->u.c.v.u;
-          print(" mov imm,#%d\n",size);
+          print(" imm #%d\n",size);
         }
 
         else
@@ -1731,7 +1731,7 @@ static void emit2(Node p)
         //
         // byte copy loop
         //
-        print(" mov imm,#%d\n",size);
+        print(" imm #%d\n",size);
         print(".blk_loop_b%d:\n",n);
         print(" sub.snb imm, #1\n");
         print(" bra .blk_done%d\n",n);
