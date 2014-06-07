@@ -2428,22 +2428,29 @@ static void import(Symbol p)
 
 
 //
-// FIXME: label experiments in defsymbol
+// FIXME: local label experiments in defsymbol
 //
 static void defsymbol(Symbol p) 
 {
   if ( p->scope >= LOCAL && p->sclass == STATIC )
   {
     //.L
-    //p->x.name = stringf( "L%d", genlabel(1));
     p->x.name = stringf( ".L%d", genlabel(1));
+    //p->x.name = stringf( "L%d", genlabel(1));
   }
 
   else if ( p->generated )
   {
     //.L
+    //p->x.name = stringf( ".L%s", p->name);
     //p->x.name = stringf( "L%s", p->name);
-    p->x.name = stringf( ".L%s", p->name);
+
+    if ( p->sclass == STATIC )
+      { p->x.name = stringf( "L%s", p->name);  }
+
+    else
+      { p->x.name = stringf( ".L%s", p->name); }
+
   }
 
 //  //
@@ -2503,7 +2510,7 @@ static void global(Symbol p)
   assert(p->u.seg);
 
   if (p->u.seg == BSS && p->sclass == STATIC)
-    print("\n%s: .common %d,%d\n .local %s\n ", p->x.name, p->type->size, p->type->align, p->x.name);
+    print("\n%s: .common %d,%d\n .local %s\n", p->x.name, p->type->size, p->type->align, p->x.name);
 
   else if (p->u.seg == BSS && Aflag >= 2)
     print("\n .align %d\n%s:\n .reserve %d\n", p->type->align, p->x.name, p->type->size);
@@ -2518,8 +2525,11 @@ static void global(Symbol p)
   if (!p->generated) 
   {
     print(" .type %s,%s\n", p->x.name, isfunc(p->type) ? "function" : "object");
+
     if (p->type->size > 0)
       print(" .size %s,%d\n", p->x.name, p->type->size);
+
+    print("\n");
 
   }
 
