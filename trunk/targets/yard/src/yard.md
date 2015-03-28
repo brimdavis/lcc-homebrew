@@ -2161,14 +2161,13 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
 
   //
-  // FIXME: pop return address off hardware stack for non-leaf functions
+  // TESTME: pop return address off hardware stack for non-leaf functions
   //
   if ( ncalls )
   {
-    print(";;\n");
-    print(";; FIXME: when supported, pop return address off HW return stack for non-leaf routines\n");
-    print(";; st.q rs, %d(sp)\n", framesize-4 );
-    print(";;\n");
+    print("\n");
+    print(";; TESTME: pop return address off HW return stack for non-leaf routines\n");
+    print(" st.q rs, %d(sp)\n", framesize-4 );
     print("\n");
   }
 
@@ -2271,14 +2270,13 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   print("\n");
 
   //
-  // FIXME: restore saved return address for non-leaf functions
+  // TESTME: before frame cleanup, push any saved return address back onto HW return stack
   //
   if (ncalls)
   {
-    print(";;\n");
-    print(";; FIXME: when supported, restore saved return address from software stack for non-leaf routines\n");
-    print(";; ld.q rs, %d(sp)\n", framesize-4 );
-    print(";;\n");
+    print("\n");
+    print(";; TESTME: push saved return address back onto HW stack for non-leaf routines\n");
+    print(" ld.q rs, %d(sp)\n", framesize-4 );
     print("\n");
   }
 
@@ -2288,6 +2286,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   if ( framesize > 0 )
   {
     print("; clean up stack frame\n");
+
     if ( alu_const(framesize,0) == 0 )
     {
       print(" add sp,#%d\n", framesize);
@@ -2308,9 +2307,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
   //
   // return
   //
-  print("\n");
   print(" rts\n");
-  print("\n");
 
   //
   // create a local immediate table after each function
